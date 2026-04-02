@@ -320,16 +320,24 @@ ipcMain.handle('get-issuelink', async (event) => {
       /class="[^"]*badge[^"]*danger[^"]*"[^>]*>([^<]+)/g,              // badge-danger 변형
       /class="[^"]*keyword[_-]?item[^"]*"[^>]*>([^<]+)/g,             // keyword-item 클래스
       /<(?:a|span|div|button)[^>]*class="[^"]*(?:hot|issue|keyword|rank)[^"]*(?:tag|item|badge)[^"]*"[^>]*>([^<]{2,25})<\/(?:a|span|div|button)>/gi,
+      // ★ P2-fix: meta tag / data-keyword 속성 패턴 추가 (마크업 변경 내성 강화)
+      /<meta\s[^>]*(?:name|property)="[^"]*keyword[^"]*"\s[^>]*content="([^"]+)"/gi,
+      /data-keyword="([^"]{2,25})"/gi,
     ];
-    const stopWords = ['로그인', '회원가입', '전체보기', '더보기', '마이페이지', '이용약관', '개인정보처리방침'];
+    const stopWords = ['로그인', '회원가입', '전체보기', '더보기', '마이페이지', '이용약관', '개인정보처리방침', 'undefined', 'null'];
 
     for (const regex of patterns) {
       let match;
       while ((match = regex.exec(html)) !== null && keywords.length < 10) {
-        const text = match[1].trim();
-        if (!text || text.length >= 30) continue;
-        if (stopWords.some(w => text.indexOf(w) !== -1)) continue;
-        if (!keywords.some(k => k.keyword === text)) keywords.push({ keyword: text });
+        // ★ meta content는 쉼표 구분일 수 있으므로 분할 처리
+        const rawTexts = match[1].includes(',') ? match[1].split(',') : [match[1]];
+        for (const raw of rawTexts) {
+          if (keywords.length >= 10) break;
+          const text = raw.trim();
+          if (!text || text.length < 2 || text.length >= 30) continue;
+          if (stopWords.some(w => text.indexOf(w) !== -1)) continue;
+          if (!keywords.some(k => k.keyword === text)) keywords.push({ keyword: text });
+        }
       }
       if (keywords.length >= 5) break; // 5개 이상 찾으면 충분
     }

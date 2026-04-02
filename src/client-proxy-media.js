@@ -188,7 +188,9 @@ export function patchApi(ApiObj) {
     if (!hasYtKey()) {
       toast('YouTube API 키를 설정하면 실시간 영상을 검색합니다', 'err');
       await wait(600);
-      return M.videos.slice().sort((a, b) => b.score - a.score);
+      const demo = M.videos.slice().sort((a, b) => b.score - a.score);
+      demo._isDemo = true;
+      return demo;
     }
     const days = { '1d': 1, '2d': 2, '3d': 3, '4d': 4, '5d': 5, '6d': 6, '7d': 7, '30d': 30, '1y': 365, '2y': 730, '3y': 1095, '4y': 1460, '5y': 1825 };
     const d = new Date(); d.setDate(d.getDate() - (days[period] || 7)); const since = d.toISOString();
@@ -210,12 +212,17 @@ export function patchApi(ApiObj) {
       const ids = allItems.map(i => i.id.videoId).filter(Boolean);
       if (!ids.length) return [];
 
-      // 영상 상세 + 채널 구독자 조회
-      const vd = await ytFetch('videos', { part: 'snippet,statistics,contentDetails', id: ids.join(',') });
-      const chIds = [...new Set(vd.items.map(i => i.snippet.channelId))];
-      const cd = await ytFetch('channels', { part: 'statistics', id: chIds.join(',') });
+      // 영상 상세 + 채널 구독자 병렬 조회
+      // ★ P2-fix: search 결과에서 channelId 추출 → videos/channels 병렬화 (순차 3회 → search 후 병렬 2회)
+      const chIdsFromSearch = [...new Set(allItems.map(i => i.snippet && i.snippet.channelId).filter(Boolean))];
+      const [vd, cd] = await Promise.all([
+        ytFetch('videos', { part: 'snippet,statistics,contentDetails', id: ids.join(',') }),
+        chIdsFromSearch.length > 0
+          ? ytFetch('channels', { part: 'statistics', id: chIdsFromSearch.join(',') })
+          : Promise.resolve({ items: [] })
+      ]);
       const cm = {};
-      cd.items.forEach(ch => { cm[ch.id] = parseInt(ch.statistics.subscriberCount || 0); });
+      (cd.items || []).forEach(ch => { cm[ch.id] = parseInt(ch.statistics.subscriberCount || 0); });
 
       return scoreVids(vd.items.map(it => {
         let durSec = 0;
@@ -236,8 +243,7 @@ export function patchApi(ApiObj) {
         return true;                                         // 'any'
       }));
     } catch (e) {
-      toast(friendlyError(e), 'err');
-      return M.videos.slice().sort((a, b) => b.score - a.score);
+      throw e; // ★ P1-fix: mock fallback 제거 — filterDuration()의 catch에서 에러 카드 + 재시도 UI 표시
     }
   };
 

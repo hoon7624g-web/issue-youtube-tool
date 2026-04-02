@@ -7,7 +7,7 @@ import { K } from './constants.js';
 export const NS_DEFAULTS = {
   nav: { step: 1, mx: 1 },
   auth: { user: null },
-  search: { skw: [], vids: [], filterDuration: 'long' },
+  search: { skw: [], vids: [], filterDuration: 'long', filterPeriod: '7d' },
   video: { sv: null, transcript: '' },
   analysis: { ana: null },
   script: { sty: 's1', scr: null, scrDual: null, es: '', scriptHistory: [], fcs: [], factCheckedBy: null, selectedScripts: [], results: [], currentProcessingIdx: 0 },
@@ -90,8 +90,8 @@ function _saveLsNow() {
   _savePending = false;
   try {
     localStorage.setItem('yt_a_progress', JSON.stringify({
-      _v: '3.5', nav: S.nav,
-      search: { skw: S.search.skw }, video: { sv: S.video.sv },
+      _v: '3.6', nav: S.nav,
+      search: { skw: S.search.skw, filterDuration: S.search.filterDuration, filterPeriod: S.search.filterPeriod }, video: { sv: S.video.sv },
       analysis: { ana: S.analysis.ana },
       script: { sty: S.script.sty, scr: S.script.scr, scrDual: S.script.scrDual, es: S.script.es },
       voice: { selVoice: S.voice.selVoice }

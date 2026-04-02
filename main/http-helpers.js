@@ -98,13 +98,17 @@ function httpsPostBuffer(options, body, timeout, maxResponseBody, signal) {
   });
 }
 
-function httpsStream(options, body, onChunk, onDone, onError, timeout, maxResponseBody) {
+function httpsStream(options, body, onChunk, onDone, onError, timeout, maxResponseBody, signal) {
   timeout = timeout || 300000;
   maxResponseBody = maxResponseBody || DEFAULT_MAX_RESPONSE;
 
   let settled = false;
-  const _onDone = () => { if (settled) return; settled = true; onDone(); };
-  const _onError = (err) => { if (settled) return; settled = true; onError(err); };
+  let cleanupAbort = null;
+  const _onDone = () => { if (settled) return; settled = true; if (cleanupAbort) cleanupAbort(); onDone(); };
+  const _onError = (err) => { if (settled) return; settled = true; if (cleanupAbort) cleanupAbort(); onError(err); };
+
+  // ★ P2-fix: AbortSignal 지원 — httpsPost/httpsGet과 인터페이스 통일
+  if (signal && signal.aborted) { _onError({ statusCode: 499, error: 'cancelled', cancelled: true }); return null; }
 
   const req = https.request(options, (res) => {
     if (res.statusCode >= 400) {
@@ -146,7 +150,11 @@ function httpsStream(options, body, onChunk, onDone, onError, timeout, maxRespon
       _onDone();
     });
   });
-  req.on('error', e => { _onError({ statusCode: 0, error: _maskKey(e.message) }); });
+  cleanupAbort = _attachAbort(signal, req, () => _onError({ statusCode: 499, error: 'cancelled', cancelled: true }));
+  req.on('error', e => {
+    if (signal && signal.aborted) return _onError({ statusCode: 499, error: 'cancelled', cancelled: true });
+    _onError({ statusCode: 0, error: _maskKey(e.message) });
+  });
   req.setTimeout(timeout, () => { req.destroy(); _onError({ statusCode: 0, error: '스트리밍 요청 시간 초과' }); });
   req.write(body);
   req.end();

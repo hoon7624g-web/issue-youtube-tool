@@ -46,7 +46,12 @@ function downloadFile(url, destPath, timeout) {
     proto.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         res.resume();
-        downloadFile(res.headers.location, destPath, timeout - 2000).then(ok).catch(fail);
+        // ★ P2-fix: 리다이렉트 호스트 검증 + timeout 하한 보장
+        try {
+          const nextUrl = new URL(res.headers.location, url);
+          if (nextUrl.protocol !== 'https:') { fail(new Error('Non-HTTPS redirect')); return; }
+        } catch (e) { fail(new Error('Invalid redirect URL')); return; }
+        downloadFile(res.headers.location, destPath, Math.max(timeout - 2000, 5000)).then(ok).catch(fail);
         return;
       }
       if (res.statusCode !== 200) { res.resume(); fail(new Error('HTTP_' + res.statusCode)); return; }

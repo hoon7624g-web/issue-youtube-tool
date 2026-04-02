@@ -80,7 +80,16 @@ function downloadFile(url, destPath, timeout) {
     var t = setTimeout(function() { fail(new Error('TIMEOUT')); }, timeout);
     var proto = url.startsWith('https') ? https : http;
     proto.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, function(res) {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) { res.resume(); downloadFile(res.headers.location, destPath, timeout - 2000).then(ok).catch(fail); return; }
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        res.resume();
+        // ★ P2-fix: 리다이렉트 호스트 검증 + timeout 하한 보장
+        try {
+          var nextUrl = new URL(res.headers.location, url);
+          if (nextUrl.protocol !== 'https:') { fail(new Error('Non-HTTPS redirect')); return; }
+        } catch (e) { fail(new Error('Invalid redirect URL')); return; }
+        downloadFile(res.headers.location, destPath, Math.max(timeout - 2000, 5000)).then(ok).catch(fail);
+        return;
+      }
       if (res.statusCode !== 200) { res.resume(); fail(new Error('HTTP_' + res.statusCode)); return; }
       var ws = fs.createWriteStream(destPath);
       var bytes = 0;
@@ -94,6 +103,14 @@ function downloadFile(url, destPath, timeout) {
 
 function isSafePexelsUrl(url) {
   try { var u = new URL(url); return u.protocol === 'https:' && PEXELS_HOSTS.some(function(h) { return u.hostname === h || u.hostname.endsWith('.' + h); }); }
+  catch(e) { return false; }
+}
+
+// ★ P2-fix: 썸네일 배경 이미지 URL 검증 — Pexels + YouTube 썸네일 허용
+var SAFE_BG_HOSTS = PEXELS_HOSTS.concat(['i.ytimg.com', 'img.youtube.com']);
+function isSafeBackgroundUrl(url) {
+  if (!url) return false;
+  try { var u = new URL(url); return u.protocol === 'https:' && SAFE_BG_HOSTS.some(function(h) { return u.hostname === h || u.hostname.endsWith('.' + h); }); }
   catch(e) { return false; }
 }
 
@@ -244,7 +261,7 @@ async function renderThumbnail(params, mainWindow) {
   var tempDir = createTempDir(), bundlePath = null;
   try {
     var backgroundFilename = null;
-    if (backgroundUrl) {
+    if (backgroundUrl && isSafeBackgroundUrl(backgroundUrl)) {
       backgroundFilename = 'thumb_bg.jpg';
       try { await downloadFile(backgroundUrl, path.join(tempDir, backgroundFilename)); }
       catch (e) { backgroundFilename = null; }
@@ -286,7 +303,7 @@ async function renderThumbnailBatch(params, mainWindow) {
   try {
     // 배경 이미지 준비
     var backgroundFilename = copyLocalFile(backgroundLocalPath, tempDir, 'thumb_bg');
-    if (!backgroundFilename && backgroundUrl) {
+    if (!backgroundFilename && backgroundUrl && isSafeBackgroundUrl(backgroundUrl)) {
       backgroundFilename = 'thumb_bg.jpg';
       try { await downloadFile(backgroundUrl, path.join(tempDir, backgroundFilename)); }
       catch (e) { backgroundFilename = null; }
@@ -370,7 +387,7 @@ async function renderThumbnailHQ(params, mainWindow) {
   var tempDir = createTempDir(), bundlePath = null;
   try {
     var backgroundFilename = copyLocalFile(backgroundLocalPath, tempDir, 'thumb_bg');
-    if (!backgroundFilename && backgroundUrl) {
+    if (!backgroundFilename && backgroundUrl && isSafeBackgroundUrl(backgroundUrl)) {
       backgroundFilename = 'thumb_bg.jpg';
       try { await downloadFile(backgroundUrl, path.join(tempDir, backgroundFilename)); }
       catch (e) { backgroundFilename = null; }

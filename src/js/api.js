@@ -97,7 +97,7 @@ function parseLLMScript(rawText) {
 async function _genShortsWithRetry(prompt, { signal } = {}) {
   const result = await callLLMWithJsonRetry(prompt, _parseShortsJSON, [], {
       noticeKey: 'gen-shorts-json-fallback',
-      noticeMessage: '숏폼 JSON 파싱이 불안정해 기본 결과로 보정했습니다.',
+      noticeMessage: '숏폼 대본 생성에 실패했습니다. 롱폼 대본은 정상 생성됩니다.',
       signal,
     });
   return (result || []).map(s => ({ title: cleanAI(s.title || ''), content: cleanAI(s.content || '') }));
@@ -202,7 +202,7 @@ export const Api = {
   },
 
   analyze: (v, transcript, { signal } = {}) => {
-    if (!hasKey('llm')) return wait(2000).then(() => { return M.analysis; });
+    if (!hasKey('llm')) return wait(2000).then(() => { return Object.assign({}, M.analysis, { _isDemo: true }); });
     const keys = getApiKeys();
     const gaiKey = keys.googleAiStudio || keys.gemini;
     const fallbackMethod = resolveFallbackMethod(transcript);
@@ -223,7 +223,7 @@ export const Api = {
 
   // ── 영상 분석 (스트리밍 — 실시간 텍스트 표시) ──
   analyzeStream: async (v, transcript, onChunk, { signal } = {}) => {
-    if (!hasKey('llm')) { await wait(2000); return M.analysis; }
+    if (!hasKey('llm')) { await wait(2000); return Object.assign({}, M.analysis, { _isDemo: true }); }
     const keys = getApiKeys();
     const gaiKey = keys.googleAiStudio || keys.gemini;
     const fallbackMethod = resolveFallbackMethod(transcript);
@@ -267,7 +267,7 @@ export const Api = {
   },
 
   genScript: (ana, sty, styPrompt) => {
-    if (!hasKey('llm')) return wait(2500).then(() => { return M.script; });
+    if (!hasKey('llm')) return wait(2500).then(() => { return Object.assign({}, M.script, { _isDemo: true }); });
     const styleBlock = PROMPT.buildStyleBlock(sty, styPrompt);
     const transcriptBlock = PROMPT.buildTranscriptBlock(S.video.transcript);
     const prompt = PROMPT.GEN_SHORT_SINGLE(ana, styleBlock, transcriptBlock);
@@ -276,7 +276,7 @@ export const Api = {
 
   // ★ P2-15: async/await 통일 (.then 체이닝 제거)
   genScriptDual: async (ana, sty, styPrompt) => {
-    if (!hasKey('llm')) { await wait(2500); return { longform: M.script, shorts: [] }; }
+    if (!hasKey('llm')) { await wait(2500); return { longform: Object.assign({}, M.script, { _isDemo: true }), shorts: [], _isDemo: true }; }
     const styleBlock = PROMPT.buildStyleBlock(sty, styPrompt);
     const transcriptBlock = PROMPT.buildTranscriptBlock(S.video.transcript);
     const anaBlock = PROMPT.buildAnaBlock(ana);
@@ -294,7 +294,7 @@ export const Api = {
 
   // ── 4-1: 스트리밍 대본 생성 (롱폼만 실시간 표시, 숏폼은 기존 방식) ──
   genScriptDualStream: async (ana, sty, styPrompt, onLfChunk, onShortsStart, { signal } = {}) => {
-    if (!hasKey('llm')) { await wait(2500); return { longform: M.script, shorts: [] }; }
+    if (!hasKey('llm')) { await wait(2500); return { longform: Object.assign({}, M.script, { _isDemo: true }), shorts: [], _isDemo: true }; }
     const styleBlock = PROMPT.buildStyleBlock(sty, styPrompt);
     const transcriptBlock = PROMPT.buildTranscriptBlock(S.video.transcript);
     const anaBlock = PROMPT.buildAnaBlock(ana);
@@ -325,7 +325,7 @@ export const Api = {
   },
 
   genShortsOnly: async (ana, sty, styPrompt, { signal } = {}) => {
-    if (!hasKey('llm')) { await wait(2500); return { longform: null, shorts: [] }; }
+    if (!hasKey('llm')) { await wait(2500); return { longform: null, shorts: [], _isDemo: true }; }
     const styleBlock = PROMPT.buildStyleBlock(sty, styPrompt);
     const anaBlock = PROMPT.buildAnaBlock(ana);
     const transcriptBlock = (S.video.transcript && S.video.transcript.length > 50)
@@ -337,7 +337,7 @@ export const Api = {
   },
 
   factCheck: async (sc, { signal } = {}) => {
-    if (!hasKey('llm')) { await wait(1800); return M.fcs.slice(); }
+    if (!hasKey('llm')) { await wait(1800); const demo = M.fcs.slice(); demo._isDemo = true; return demo; }
     const videoTitle = S.video.sv ? S.video.sv.title : '';
     const trimmedSc = sc.length > 4000 ? sc.substring(0, 4000) + '\n[... 이하 생략]' : sc;
     const trimmedT = (S.video.transcript && S.video.transcript.length > 50)
@@ -353,7 +353,8 @@ export const Api = {
     if (keys.perplexity) {
       try {
         const raw = await callPerplexity(prompt, { signal });
-        const result = parseFc(raw) || M.fcs.slice();
+        const result = parseFc(raw);
+        if (!result) throw new Error('Perplexity 팩트체크 응답을 파싱할 수 없습니다');
         sSet({ [K.SCRIPT_FACT_CHECKED_BY]: 'perplexity' });
         return result;
       } catch (e) {
@@ -362,15 +363,18 @@ export const Api = {
     } else {
       sSet({ [K.SCRIPT_FACT_CHECKED_BY]: 'llm' });
     }
-    return callLLMWithJsonRetry(prompt, parseFc, M.fcs.slice(), {
+    // ★ P2-fix: mock fallback 제거 — 파싱 실패 시 null 반환 후 throw
+    const fcResult = await callLLMWithJsonRetry(prompt, parseFc, null, {
       noticeKey: 'factcheck-json-fallback',
-      noticeMessage: '팩트체크 응답 형식이 불안정해 기본 결과로 보정했습니다.',
+      noticeMessage: '팩트체크 응답 형식이 불안정합니다. 다시 시도해주세요.',
       signal,
     });
+    if (fcResult == null) throw new Error('팩트체크 AI 응답을 파싱할 수 없습니다. 다시 시도해주세요.');
+    return fcResult;
   },
 
   extractKw: async (sc, { signal } = {}) => {
-    if (!hasKey('llm')) { await wait(1200); return M.ekw.slice(); }
+    if (!hasKey('llm')) { await wait(1200); const demo = M.ekw.slice(); demo._isDemo = true; return demo; }
     const videoTitle = S.video.sv ? S.video.sv.title : '';
     const trimLimit = sc.length > 3000 ? 8000 : 3000;
     const trimmed = sc.length > trimLimit ? sc.substring(0, trimLimit) + '\n\n[... 이하 생략, 총 ' + sc.length + '자]' : sc;
@@ -381,11 +385,14 @@ export const Api = {
       const normalized = j.map(normalizeFootageSceneItem).filter(Boolean);
       return j.length > 0 && !normalized.length ? null : normalized;
     };
-    return callLLMWithJsonRetry(prompt, parseKw, M.ekw.slice(), {
+    // ★ P2-fix: mock fallback 제거 — 파싱 실패 시 null 반환 후 throw
+    const ekwResult = await callLLMWithJsonRetry(prompt, parseKw, null, {
       noticeKey: 'extractkw-json-fallback',
-      noticeMessage: '풋티지 브리프 응답 형식이 불안정해 기본 결과로 보정했습니다.',
+      noticeMessage: '풋티지 브리프 응답 형식이 불안정합니다. 다시 시도해주세요.',
       signal,
     });
+    if (ekwResult == null) throw new Error('풋티지 브리프 AI 응답을 파싱할 수 없습니다. 다시 시도해주세요.');
+    return ekwResult;
   },
 
   getTrends: () => { return Promise.resolve([]); },

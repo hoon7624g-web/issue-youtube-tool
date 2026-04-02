@@ -78,7 +78,7 @@
 | 환경 | 저장소 | 보호 수준 | UI 표시 |
 |------|--------|----------|---------|
 | Electron (safeStorage 가용) | OS 키체인/DPAPI | ✅ 암호화 | 🔒 OS 보안 저장소 |
-| Electron (safeStorage 불가) | localStorage fallback | ⚠️ 평문 | ⚠ 브라우저 로컬 저장소 |
+| Electron (safeStorage 불가) | 저장 차단 (fail-closed) | ✅ 키 미저장 | ⚠ 저장 불가 안내 |
 | 웹 | localStorage | ⚠️ 평문 | ⚠ 브라우저 로컬 저장소 |
 
 > API 키 설정 화면에서 현재 저장 방식이 배지로 실시간 표시됩니다.
@@ -99,11 +99,11 @@
 - **XSS 1건 발생 시**: Electron에서는 모든 API 키가 IPC로 보호되어 렌더러 메모리에 키가 없음. 연결 테스트도 v3.5.5에서 IPC 전환 완료.
 - **웹 환경**: 모든 키가 브라우저에 노출되며, 서버 rate limit 우회 가능
 - **관측성 사각지대**: Electron IPC 경유 호출(YouTube/Pexels/LLM/TTS)은 서버 usage log에 남지 않음
-- **safeStorage 불가 시**: OS 키체인을 사용할 수 없는 환경에서는 localStorage fallback 발생. v3.5.5에서 실제 저장 방식 배지를 safeStorage 가용 여부 기준으로 표시하도록 개선.
+- **safeStorage 불가 시**: OS 키체인을 사용할 수 없는 환경에서는 API 키 저장이 차단됩니다 (fail-closed). v3.6.0 기준 Electron에서 safeStorage 불가 시 localStorage fallback을 하지 않으며, 저장 불가 에러를 사용자에게 표시합니다.
 
 ## 향후 개선 방향
 
-**v3.5.5 기준으로 Electron 환경의 모든 API 호출(연결 테스트 포함)이 Main IPC를 경유합니다.**
+**v3.6.0 기준으로 Electron 환경의 모든 API 호출(연결 테스트 포함)이 Main IPC를 경유합니다.**
 
 > YouTube Data API: v3.5.1에서 ipc-youtube.js로 이동 완료.
 > Pexels: v3.5.1에서 ipc-pexels.js로 이동 완료. v3.5.4에서 프리패치 경로도 IPC 통일.

@@ -13,7 +13,8 @@ import { ytFetch, hasYtKey } from '../../client-proxy.js';
 // 3-11: showManualUrlInput() 삭제 — URL 입력은 Step 3에 인라인으로 포함됨
 
 // ★ P1-9: YouTube Data API IPC로 영상 정보 조회 (키 있을 때), oEmbed fallback
-async function _fetchVideoInfo(videoId) {
+// ★ P1-fix: signal 파라미터 추가 — 취소/timeout 지원
+async function _fetchVideoInfo(videoId, signal) {
   // 1순위: YouTube Data API (Electron IPC — CSP 안전)
   if (hasYtKey()) {
     try {
@@ -38,7 +39,7 @@ async function _fetchVideoInfo(videoId) {
     } catch (e) { /* YouTube API 실패 → oEmbed fallback */ }
   }
   // 2순위: oEmbed (API 키 불필요)
-  const r = await fetch('https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=' + videoId + '&format=json');
+  const r = await fetch('https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=' + videoId + '&format=json', { signal });
   if (!r.ok) throw new Error('영상을 찾을 수 없습니다');
   const data = await r.json();
   return {
@@ -48,6 +49,12 @@ async function _fetchVideoInfo(videoId) {
     views: 0, likes: 0, subs: 0, desc: '', score: 0, news: false
   };
 }
+
+// ★ P1-fix: runId + AbortController로 중복 요청 방지 + 경합 조건 해소
+let _manualRunId = 0;
+let _manualAC = null;
+let _manualTimer = null;
+let _manualTimedOut = false;
 
 const loadManualUrl = () => {
   const url = ($('manualUrl') || {}).value || '';
@@ -59,22 +66,46 @@ const loadManualUrl = () => {
   }
   const videoId = match[1];
   if (errEl) errEl.style.display = 'none';
+
+  // ★ 이전 요청 취소 + 새 runId 발급
+  const runId = ++_manualRunId;
+  if (_manualAC) { try { _manualAC.abort(); } catch (_) {} }
+  if (_manualTimer) { clearTimeout(_manualTimer); _manualTimer = null; }
+  _manualAC = new AbortController();
+  _manualTimedOut = false;
+  const signal = _manualAC.signal;
+
+  // ★ 15초 timeout — 같은 AbortController로 abort하므로 fetch도 즉시 중단됨
+  _manualTimer = setTimeout(() => {
+    _manualTimedOut = true;
+    try { _manualAC.abort(); } catch (_) {}
+  }, 15000);
+
+  // ★ 로딩 상태 표시 + 버튼/입력 비활성화
+  const urlInput = $('manualUrl');
+  const goBtn = urlInput && urlInput.parentElement && urlInput.parentElement.querySelector('.btn');
+  if (goBtn) { goBtn.disabled = true; goBtn.textContent = '⏳ 조회 중...'; }
+  if (urlInput) { urlInput.disabled = true; urlInput.style.opacity = '0.6'; }
   toast('영상 정보를 불러오는 중...');
-  // ★ P1-9: YouTube Data API IPC 우선 → oEmbed fallback
-  _fetchVideoInfo(videoId)
+
+  _fetchVideoInfo(videoId, signal)
     .then(vid => {
+      if (runId !== _manualRunId) return; // ★ stale 응답 무시
       sSet({ [K.VIDEO_SV]: vid, [K.SEARCH_VIDS]: [vid] });
       toast(vid.title);
       sSet({ [K.NAV_STEP]: 4, [K.NAV_MX]: Math.max(S.nav.mx, 4) });
       syncSb(); runAction('showP');
     })
     .catch(e => {
-      // 2-9: oEmbed 실패 시 최소 정보로 진행 옵션 제공
+      if (runId !== _manualRunId) return; // ★ stale 에러 무시
+      if (signal.aborted && !_manualTimedOut) return; // ★ 새 URL 입력으로 인한 취소만 무시 (timeout은 에러 표시)
+      // 실패 시 최소 정보로 진행 옵션 제공
+      const errMsg = _manualTimedOut ? '영상 정보 조회 시간 초과 (15초)' : friendlyError(e);
       if (errEl) {
         errEl.textContent = '';
         errEl.style.display = 'block';
         errEl.style.cssText = 'display:block;margin-top:8px;padding:12px;background:var(--yel-bg);border:1px solid rgba(184,138,0,.2);border-radius:var(--r);color:var(--t1)';
-        const msg = el('div', { style: 'font-size:12px;color:var(--yel);margin-bottom:8px', textContent: '영상 정보를 가져올 수 없습니다: ' + friendlyError(e) });
+        const msg = el('div', { style: 'font-size:12px;color:var(--yel);margin-bottom:8px', textContent: '영상 정보를 가져올 수 없습니다: ' + errMsg });
         errEl.appendChild(msg);
         const proceedBtn = el('button', { className: 'btn bs', style: 'font-size:12px;padding:6px 14px', textContent: '그래도 이 영상으로 진행 →' });
         proceedBtn.addEventListener('click', () => {
@@ -91,6 +122,13 @@ const loadManualUrl = () => {
         });
         errEl.appendChild(proceedBtn);
       }
+    })
+    .finally(() => {
+      if (_manualTimer) { clearTimeout(_manualTimer); _manualTimer = null; }
+      if (runId !== _manualRunId) return;
+      // ★ 로딩 상태 해제
+      if (goBtn) { goBtn.disabled = false; goBtn.textContent = '분석하기'; }
+      if (urlInput) { urlInput.disabled = false; urlInput.style.opacity = ''; }
     });
 };
 
