@@ -1,0 +1,22 @@
+{
+  "name": "youtube-dosa-remotion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "유튜브도사 Remotion 숏폼 영상 생성 모듈",
+  "scripts": {
+    "studio": "remotion studio",
+    "build": "remotion render IssueShortsTemplate --props='{}'",
+    "upgrade": "remotion upgrade"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.250",
+    "@remotion/player": "4.0.250",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "4.0.250"
+  },
+  "devDependencies": {
+    "@remotion/bundler": "4.0.250",
+    "@remotion/renderer": "4.0.250"
+  }
+}

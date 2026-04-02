@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — 유튜브도사 영상 제작 솔루션 (Deprecated)</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Noto Sans KR', system-ui, sans-serif; background: #faf9f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+.card { max-width: 480px; padding: 48px 32px; text-align: center; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.08); }
+.icon { font-size: 48px; margin-bottom: 16px; }
+h1 { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: #1a1a1a; }
+p { font-size: 14px; color: #666; line-height: 1.7; margin-bottom: 20px; }
+.badge { display: inline-block; font-size: 11px; font-weight: 600; color: #FF4757; background: rgba(255,71,87,.08); padding: 4px 12px; border-radius: 100px; margin-bottom: 16px; }
+a { color: #2563eb; text-decoration: none; font-weight: 600; }
+a:hover { text-decoration: underline; }
+code { background: #f0f0f0; padding: 2px 8px; border-radius: 4px; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">🔄</div>
+  <div class="badge">DEPRECATED — v3.4.1</div>
+  <h1>관리자 페이지가 이동되었습니다</h1>
+  <p>
+    이 페이지(src/admin.html)는 <strong>v3.4.1</strong>부터 더 이상 사용되지 않습니다.<br><br>
+    관리자 기능은 <strong>admin-web/index.html</strong>로 통합되었습니다.<br>
+    Supabase Auth 기반 로그인으로 접속하세요.
+  </p>
+  <p style="font-size:12px; color:#999;">
+    기존 Admin Secret(X-Admin-Secret) 인증 방식은 제거되었습니다.<br>
+    관리자 계정은 Supabase Auth + profiles.role = 'admin'으로 관리됩니다.
+  </p>
+</div>
+</body>
+</html>

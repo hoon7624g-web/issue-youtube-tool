@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>이슈 유튜브 제작툴 — API 키 발급 가이드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#fafafa;--surface:#fff;--t1:#111;--t2:#444;--t3:#888;--t4:#aaa;
+  --accent:#e8590c;--accent-bg:rgba(232,89,12,.06);--accent-border:rgba(232,89,12,.15);
+  --blue:#2563eb;--blue-bg:rgba(37,99,235,.06);--blue-border:rgba(37,99,235,.12);
+  --green:#16a34a;--green-bg:rgba(22,163,74,.06);--green-border:rgba(22,163,74,.12);
+  --purple:#7c3aed;--purple-bg:rgba(124,58,237,.06);--purple-border:rgba(124,58,237,.12);
+  --r:12px;--r2:8px;--mono:'SF Mono','Cascadia Code','Fira Code',monospace;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-lg:0 10px 30px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.06);
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#0f0f0f;--surface:#1a1a1a;--t1:#f0f0f0;--t2:#bbb;--t3:#777;--t4:#555;
+    --accent:#fb923c;--accent-bg:rgba(251,146,60,.08);--accent-border:rgba(251,146,60,.18);
+    --blue:#60a5fa;--blue-bg:rgba(96,165,250,.08);--blue-border:rgba(96,165,250,.15);
+    --green:#4ade80;--green-bg:rgba(74,222,128,.08);--green-border:rgba(74,222,128,.15);
+    --purple:#a78bfa;--purple-bg:rgba(167,139,250,.08);--purple-border:rgba(167,139,250,.15);
+    --shadow:0 1px 3px rgba(0,0,0,.3);--shadow-lg:0 10px 30px rgba(0,0,0,.4);
+  }
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);line-height:1.8;-webkit-font-smoothing:antialiased}
+.wrap{max-width:760px;margin:0 auto;padding:40px 24px 80px}
+
+/* Hero */
+.hero{text-align:center;padding:48px 0 40px}
+.hero h1{font-size:28px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px}
+.hero p{font-size:15px;color:var(--t3);line-height:1.7}
+.hero .badge{display:inline-block;background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border);font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;margin-bottom:16px}
+
+/* TOC */
+.toc{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:24px 28px;margin-bottom:36px}
+.toc h2{font-size:15px;font-weight:700;margin-bottom:14px;color:var(--t2)}
+.toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.toc a{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--t1);font-size:13.5px;font-weight:500;padding:8px 12px;border-radius:var(--r2);transition:background .15s}
+.toc a:hover{background:var(--accent-bg)}
+.toc a .icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+
+/* Section */
+.section{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:32px 28px;margin-bottom:20px;scroll-margin-top:24px}
+.section-head{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid rgba(128,128,128,.12)}
+.section-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.section-head h2{font-size:18px;font-weight:700;letter-spacing:-.3px}
+.section-head .tier{font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px;margin-left:auto;white-space:nowrap}
+.tier.must{background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border)}
+.tier.rec{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
+.tier.opt{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+
+.info-box{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:var(--r2);padding:14px 16px;font-size:13px;color:var(--blue);line-height:1.7;margin-bottom:18px}
+.warn-box{background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:var(--r2);padding:14px 16px;font-size:13px;color:var(--accent);line-height:1.7;margin-bottom:18px}
+.tip-box{background:var(--green-bg);border:1px solid var(--green-border);border-radius:var(--r2);padding:14px 16px;font-size:13px;color:var(--green);line-height:1.7;margin-bottom:18px}
+
+.steps{counter-reset:step}
+.step{counter-increment:step;position:relative;padding:0 0 16px 36px;font-size:14px;color:var(--t2);line-height:1.8}
+.step:last-child{padding-bottom:0}
+.step::before{content:counter(step);position:absolute;left:0;top:1px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.step strong{color:var(--t1);font-weight:600}
+.step code{background:rgba(128,128,128,.1);padding:2px 7px;border-radius:4px;font-family:var(--mono);font-size:12.5px;color:var(--accent);white-space:nowrap}
+
+.key-format{background:rgba(128,128,128,.06);border:1px dashed rgba(128,128,128,.2);border-radius:var(--r2);padding:10px 14px;font-family:var(--mono);font-size:13px;color:var(--t3);margin:12px 0 4px;word-break:break-all}
+.pricing{font-size:13px;color:var(--t3);margin-top:12px;padding-top:12px;border-top:1px solid rgba(128,128,128,.1)}
+
+/* Footer */
+.footer{text-align:center;padding:32px 0;font-size:12px;color:var(--t4);line-height:1.8}
+.footer a{color:var(--accent);text-decoration:none}
+
+@media(max-width:600px){
+  .wrap{padding:24px 16px 60px}
+  .hero h1{font-size:22px}
+  .section{padding:24px 20px}
+  .toc-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="hero">
+  <div class="badge">유튜브도사 영상 제작 솔루션 v3.6.0</div>
+  <h1>API 키 발급 가이드</h1>
+  <p>툴에 필요한 API 키를 하나씩 발급받으세요.<br>필수 3개만 있으면 바로 시작할 수 있습니다.</p>
+</div>
+
+<div class="toc">
+  <h2>📑 목차 — 클릭하면 해당 섹션으로 이동</h2>
+  <div class="toc-grid">
+    <a href="#youtube"><span class="icon" style="background:#ff000015;color:#f00">▶</span>YouTube Data API</a>
+    <a href="#gemini"><span class="icon" style="background:#4285f415;color:#4285f4">◆</span>Gemini API</a>
+    <a href="#claude"><span class="icon" style="background:#d4785315;color:#d47853">●</span>Claude API</a>
+    <a href="#chatgpt"><span class="icon" style="background:#10a37f15;color:#10a37f">◈</span>ChatGPT API</a>
+    <a href="#tts"><span class="icon" style="background:#4285f415;color:#4285f4">🔊</span>Google TTS</a>
+    <a href="#elevenlabs"><span class="icon" style="background:#00000015;color:var(--t1)">🎙</span>ElevenLabs</a>
+    <a href="#pexels"><span class="icon" style="background:#05a08115;color:#05a081">🎬</span>Pexels</a>
+    <a href="#perplexity"><span class="icon" style="background:#20808d15;color:#20808d">🔍</span>Perplexity</a>
+  </div>
+</div>
+
+<!-- ═══ YouTube ═══ -->
+<div class="section" id="youtube">
+  <div class="section-head">
+    <div class="section-icon" style="background:#ff000010;color:#f00">▶</div>
+    <h2>YouTube Data API v3</h2>
+    <span class="tier must">필수</span>
+  </div>
+  <div class="info-box">영상 검색과 메타데이터 조회에 사용됩니다. Google Cloud 프로젝트가 필요합니다.</div>
+  <div class="steps">
+    <div class="step"><strong>Google Cloud Console</strong>에 접속합니다 → <code>console.cloud.google.com</code></div>
+    <div class="step">상단의 <strong>프로젝트 선택</strong> → <strong>새 프로젝트</strong>를 클릭하고, 프로젝트 이름을 입력한 뒤 <strong>만들기</strong>를 누릅니다.</div>
+    <div class="step">좌측 메뉴에서 <strong>API 및 서비스</strong> → <strong>라이브러리</strong>로 이동합니다.</div>
+    <div class="step">검색창에 <strong>YouTube Data API v3</strong>를 검색하고 클릭 → <strong>사용</strong> 버튼을 누릅니다.</div>
+    <div class="step"><strong>API 및 서비스</strong> → <strong>사용자 인증 정보</strong>로 이동합니다.</div>
+    <div class="step">상단의 <strong>+ 사용자 인증 정보 만들기</strong> → <strong>API 키</strong>를 선택합니다.</div>
+    <div class="step">생성된 API 키를 복사합니다. (선택: <strong>키 제한</strong>에서 YouTube Data API v3만 허용하면 보안이 강화됩니다)</div>
+  </div>
+  <div class="key-format">AIzaSy●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●</div>
+  <div class="pricing">💰 무료 할당량: 일 10,000 유닛 (search 1회 = 100유닛, videos 1회 = 1유닛). 보통 하루 100회 검색 가능.</div>
+</div>
+
+<!-- ═══ Gemini ═══ -->
+<div class="section" id="gemini">
+  <div class="section-head">
+    <div class="section-icon" style="background:#4285f410;color:#4285f4">◆</div>
+    <h2>Gemini API (Google AI Studio)</h2>
+    <span class="tier must">필수 (LLM 3종 중 1개)</span>
+  </div>
+  <div class="info-box">AI 대본 생성 + 영상 분석에 사용됩니다. Gemini를 선택하면 Google AI Studio 키도 겸용됩니다.</div>
+  <div class="steps">
+    <div class="step"><strong>Google AI Studio</strong>에 접속합니다 → <code>aistudio.google.com</code></div>
+    <div class="step">Google 계정으로 로그인합니다.</div>
+    <div class="step">좌측 메뉴 하단의 <strong>Get API key</strong>를 클릭합니다.</div>
+    <div class="step"><strong>Create API key</strong> 버튼을 클릭합니다. 기존 Google Cloud 프로젝트를 선택하거나 새로 생성합니다.</div>
+    <div class="step">생성된 API 키를 복사합니다.</div>
+  </div>
+  <div class="key-format">AIzaSy●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●</div>
+  <div class="tip-box">💡 Gemini를 메인 LLM으로 선택하면 별도의 Google AI Studio 키 입력이 불필요합니다 (자동 겸용).</div>
+  <div class="pricing">💰 무료: Gemini Flash 분당 15회, 일 1,500회. 유료(Pay-as-you-go): Flash 입력 $0.075/100만 토큰.</div>
+</div>
+
+<!-- ═══ Claude ═══ -->
+<div class="section" id="claude">
+  <div class="section-head">
+    <div class="section-icon" style="background:#d4785310;color:#d47853">●</div>
+    <h2>Claude API (Anthropic)</h2>
+    <span class="tier must">필수 (LLM 3종 중 1개)</span>
+  </div>
+  <div class="info-box">AI 대본 생성에 사용됩니다. 자연스러운 한국어에 강점이 있습니다.</div>
+  <div class="steps">
+    <div class="step"><strong>Anthropic Console</strong>에 접속합니다 → <code>console.anthropic.com</code></div>
+    <div class="step">계정을 만들고 로그인합니다. (이메일 또는 Google 계정)</div>
+    <div class="step">좌측 메뉴에서 <strong>API Keys</strong>를 클릭합니다.</div>
+    <div class="step"><strong>Create Key</strong> 버튼을 클릭하고, 키 이름을 입력한 뒤 생성합니다.</div>
+    <div class="step">생성된 API 키를 즉시 복사합니다. (이후 다시 볼 수 없습니다)</div>
+    <div class="step"><strong>Settings → Billing</strong>에서 결제 수단을 등록하고 크레딧을 충전합니다. ($5~$10 권장)</div>
+  </div>
+  <div class="key-format">sk-ant-api03-●●●●●●●●●●●●●●●●●●●●●●●●</div>
+  <div class="warn-box">⚠️ API 키는 생성 직후 한 번만 표시됩니다. 반드시 바로 복사해서 안전한 곳에 저장하세요.</div>
+  <div class="pricing">💰 유료 전용. Sonnet: 입력 $3/100만 토큰, 출력 $15/100만 토큰. 대본 1개 생성 약 $0.01~0.03.</div>
+</div>
+
+<!-- ═══ ChatGPT ═══ -->
+<div class="section" id="chatgpt">
+  <div class="section-head">
+    <div class="section-icon" style="background:#10a37f10;color:#10a37f">◈</div>
+    <h2>ChatGPT API (OpenAI)</h2>
+    <span class="tier must">필수 (LLM 3종 중 1개)</span>
+  </div>
+  <div class="info-box">AI 대본 생성에 사용됩니다. ChatGPT를 선택하면 Whisper 음성 인식도 같은 키로 자동 사용됩니다.</div>
+  <div class="steps">
+    <div class="step"><strong>OpenAI Platform</strong>에 접속합니다 → <code>platform.openai.com</code></div>
+    <div class="step">계정을 만들고 로그인합니다.</div>
+    <div class="step">우측 상단 프로필 → <strong>API Keys</strong> (또는 좌측 메뉴 API Keys)를 클릭합니다.</div>
+    <div class="step"><strong>+ Create new secret key</strong>를 클릭하고, 이름을 입력한 뒤 생성합니다.</div>
+    <div class="step">생성된 키를 즉시 복사합니다. (이후 다시 볼 수 없습니다)</div>
+    <div class="step"><strong>Settings → Billing</strong>에서 결제 수단을 등록하고 크레딧을 충전합니다. ($5~$10 권장)</div>
+  </div>
+  <div class="key-format">sk-●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●</div>
+  <div class="tip-box">💡 ChatGPT를 메인 LLM으로 선택하면 별도의 OpenAI 키 입력이 불필요합니다 (Whisper 자동 겸용).</div>
+  <div class="pricing">💰 유료 전용. GPT-4o-mini: 입력 $0.15/100만 토큰, 출력 $0.60/100만 토큰. 대본 1개 약 $0.005~0.02.</div>
+</div>
+
+<!-- ═══ Google TTS ═══ -->
+<div class="section" id="tts">
+  <div class="section-head">
+    <div class="section-icon" style="background:#4285f410;color:#4285f4">🔊</div>
+    <h2>Google Cloud Text-to-Speech</h2>
+    <span class="tier must">필수</span>
+  </div>
+  <div class="info-box">AI 음성 합성에 사용됩니다. YouTube API 키와 같은 Google Cloud 프로젝트에서 발급받으면 편합니다.</div>
+  <div class="steps">
+    <div class="step"><strong>Google Cloud Console</strong>에 접속합니다 → <code>console.cloud.google.com</code></div>
+    <div class="step">YouTube API를 만든 프로젝트를 선택합니다. (또는 새 프로젝트 생성)</div>
+    <div class="step"><strong>API 및 서비스</strong> → <strong>라이브러리</strong>에서 <strong>Cloud Text-to-Speech API</strong>를 검색하고 <strong>사용</strong>을 누릅니다.</div>
+    <div class="step">이미 YouTube용 API 키가 있다면 같은 키를 사용할 수 있습니다. 없다면 <strong>사용자 인증 정보</strong> → <strong>API 키 만들기</strong>로 새로 발급합니다.</div>
+    <div class="step"><strong>결제</strong> 메뉴에서 결제 계정을 연결합니다. (무료 할당량 사용을 위해서도 결제 계정이 필요합니다)</div>
+  </div>
+  <div class="key-format">AIzaSy●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●● (YouTube 키와 동일 가능)</div>
+  <div class="tip-box">💡 YouTube API와 같은 프로젝트라면, YouTube API 키를 그대로 입력해도 됩니다.</div>
+  <div class="pricing">💰 무료: 월 400만 글자 (WaveNet), 월 100만 글자 (Neural2). 대본 1개(3,000자) 약 1,300번 무료 가능.</div>
+</div>
+
+<!-- ═══ ElevenLabs ═══ -->
+<div class="section" id="elevenlabs">
+  <div class="section-head">
+    <div class="section-icon" style="background:#00000008;color:var(--t1)">🎙</div>
+    <h2>ElevenLabs</h2>
+    <span class="tier rec">추천 (선택)</span>
+  </div>
+  <div class="info-box">프리미엄 AI 음성 합성에 사용됩니다. Google TTS보다 자연스러운 음성을 원할 때 사용하세요.</div>
+  <div class="steps">
+    <div class="step"><strong>ElevenLabs</strong>에 접속합니다 → <code>elevenlabs.io</code></div>
+    <div class="step">계정을 만들고 로그인합니다.</div>
+    <div class="step">우측 상단 프로필 아이콘 → <strong>Profile + API key</strong>를 클릭합니다.</div>
+    <div class="step"><strong>API Keys</strong> 섹션에서 키 아이콘(👁)을 클릭하면 API 키가 표시됩니다. 복사합니다.</div>
+  </div>
+  <div class="key-format">sk_●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●</div>
+  <div class="pricing">💰 무료: 월 10,000글자. 유료: Starter $5/월 (30,000글자), Creator $22/월 (100,000글자).</div>
+</div>
+
+<!-- ═══ Pexels ═══ -->
+<div class="section" id="pexels">
+  <div class="section-head">
+    <div class="section-icon" style="background:#05a08110;color:#05a081">🎬</div>
+    <h2>Pexels</h2>
+    <span class="tier opt">선택 (무료)</span>
+  </div>
+  <div class="info-box">풋티지 브리프 단계에서 무료 스톡 영상 미리보기에 사용됩니다. 완전 무료입니다.</div>
+  <div class="steps">
+    <div class="step"><strong>Pexels</strong>에 접속합니다 → <code>pexels.com/api</code></div>
+    <div class="step"><strong>Join</strong> 또는 <strong>Get Started</strong>를 클릭하고 계정을 만듭니다.</div>
+    <div class="step">로그인 후 <strong>Your API Key</strong> 페이지로 이동합니다. (또는 <code>pexels.com/api/new</code>)</div>
+    <div class="step">간단한 설명을 입력하고 <strong>Generate API Key</strong>를 클릭합니다.</div>
+    <div class="step">생성된 API 키를 복사합니다.</div>
+  </div>
+  <div class="key-format">●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●</div>
+  <div class="pricing">💰 완전 무료: 월 20,000회 요청, 시간당 200회.</div>
+</div>
+
+<!-- ═══ Perplexity ═══ -->
+<div class="section" id="perplexity">
+  <div class="section-head">
+    <div class="section-icon" style="background:#20808d10;color:#20808d">🔍</div>
+    <h2>Perplexity</h2>
+    <span class="tier opt">선택</span>
+  </div>
+  <div class="info-box">팩트 검증 단계에서 실시간 웹 검색으로 사실 여부를 강화 검증합니다. 없으면 Perplexity 웹으로 자동 연결됩니다.</div>
+  <div class="steps">
+    <div class="step"><strong>Perplexity</strong>에 접속합니다 → <code>perplexity.ai</code></div>
+    <div class="step">계정을 만들고 로그인합니다.</div>
+    <div class="step">좌측 하단의 프로필 → <strong>Settings</strong>를 클릭합니다.</div>
+    <div class="step"><strong>API</strong> 탭으로 이동합니다.</div>
+    <div class="step"><strong>Generate</strong> 버튼을 클릭하여 API 키를 생성합니다.</div>
+    <div class="step">결제 수단을 등록하고 크레딧을 충전합니다. ($5 권장)</div>
+  </div>
+  <div class="key-format">pplx-●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●●</div>
+  <div class="pricing">💰 유료 전용. sonar: $1/1,000 요청. 팩트체크 1회 약 $0.001.</div>
+</div>
+
+<!-- Summary -->
+<div class="section" style="background:var(--accent-bg);border:1px solid var(--accent-border)">
+  <h2 style="font-size:16px;font-weight:700;margin-bottom:14px">📋 최소 시작 조합 요약</h2>
+  <p style="font-size:14px;color:var(--t2);line-height:2">
+    <strong>반드시 필요한 3개:</strong> YouTube Data API + LLM 1개(Gemini/Claude/ChatGPT 중 택1) + Google TTS<br>
+    <strong>가장 저렴한 조합:</strong> YouTube + Gemini (무료) + Google TTS (무료) = <strong>월 0원</strong> 가능<br>
+    <strong>추천 조합:</strong> YouTube + Gemini + Google TTS + Pexels (무료) + ElevenLabs (선택)<br>
+    <strong>가장 고급 조합:</strong> YouTube + Claude + Google TTS + ElevenLabs + Pexels + Perplexity
+  </p>
+</div>
+
+<div class="footer">
+  <p>유튜브도사 영상 제작 솔루션 v3.6.0 — <a href="https://changerschampus.com" target="_blank">체인저스캠퍼스</a></p>
+  <p>문제가 있으면 카카오톡 채널로 문의해주세요.</p>
+</div>
+
+</div>
+</body>
+</html>

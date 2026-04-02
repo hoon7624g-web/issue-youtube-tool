@@ -1,0 +1,34 @@
+{
+  "_comment": "src/config.js (ESM) 와 main/config.js (CJS) 공용 설정. 모델명/제한값 변경 시 이 파일만 수정.",
+  "DEFAULT_GEMINI_MODEL": "gemini-3.1-pro-preview",
+  "DEFAULT_CLAUDE_MODEL": "claude-sonnet-4-20250514",
+  "DEFAULT_OPENAI_MODEL": "gpt-4o",
+  "MAX_OUTPUT_TOKENS": 16384,
+  "MAX_OUTPUT_TOKENS_SHORT": 4096,
+  "MAX_PROMPT_CHARS": 30000,
+  "MAX_PROMPT_CHARS_PRO": 60000,
+  "_comment_allowlists": "v3.5.8: 서버/클라이언트 양쪽에서 모델명 검증.",
+  "ALLOWED_GEMINI_MODELS": ["gemini-3.1-pro-preview", "gemini-2.5-pro", "gemini-2.0-flash", "gemini-1.5-flash"],
+  "ALLOWED_CLAUDE_MODELS": ["claude-sonnet-4-20250514", "claude-opus-4-20250514", "claude-haiku-4-5-20251001"],
+  "_comment_errors": "v3.5.8: 에러 메시지 단일 소스 — ipc-llm.js / client-proxy-llm.js / llm.ts 공용",
+  "ERROR_MESSAGES": {
+    "claude_no_key": "Claude API 키가 설정되지 않았습니다.",
+    "claude_invalid_key": "Claude API 키가 유효하지 않습니다.",
+    "gemini_no_key": "Gemini / Google AI Studio API 키가 설정되지 않았습니다.",
+    "gemini_invalid_key": "Gemini API 키가 유효하지 않습니다.",
+    "openai_no_key": "OpenAI API 키가 설정되지 않았습니다.",
+    "openai_invalid_key": "OpenAI API 키가 유효하지 않습니다.",
+    "perplexity_no_key": "Perplexity API 키가 설정되지 않았습니다.",
+    "perplexity_invalid_key": "Perplexity API 키가 유효하지 않습니다.",
+    "rate_limit": "요청 한도 초과",
+    "server_error": "AI API 서버 오류",
+    "upstream_error": "AI API 오류"
+  },
+  "_comment_providers": "P2-17: provider별 설정 단일 소스.",
+  "PROVIDERS": {
+    "claude":     { "label": "Claude",     "maxPrompt": 30000 },
+    "gemini":     { "label": "Gemini",     "maxPrompt": 60000 },
+    "openai":     { "label": "ChatGPT",    "maxPrompt": 30000 },
+    "perplexity": { "label": "Perplexity", "maxPrompt": 30000 }
+  }
+}

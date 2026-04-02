@@ -1,0 +1,13 @@
+node_modules/
+dist/
+
+*.exe
+*.dmg
+*.AppImage
+.env
+
+supabase/.temp/
+
+supabase/.temp/
+
+supabase/.temp/
