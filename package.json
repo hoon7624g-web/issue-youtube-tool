@@ -1,7 +1,7 @@
-{
+﻿{
   "name": "issue-youtube-tool",
   "version": "3.6.1",
-  "description": "유튜브도사 영상 제작 솔루션 — 체인저스캠퍼스",
+  "description": "?좏뒠釉뚮룄???곸긽 ?쒖옉 ?붾（????泥댁씤??ㅼ틺?쇱뒪",
   "main": "main.js",
   "scripts": {
     "dev:vite": "vite --config vite.config.js",
@@ -28,9 +28,16 @@
   },
   "build": {
     "appId": "com.changerscampus.issue-youtube-tool",
-    "productName": "유튜브도사 영상 제작 솔루션",
+    "productName": "?좏뒠釉뚮룄???곸긽 ?쒖옉 ?붾（??,
     "artifactName": "youtube-dosa-${version}-${os}-${arch}.${ext}",
-    "asar": false,
+    "asar": true,
+    "asarUnpack": [
+      "main/**/*",
+      "preload.js",
+      "shared-config.json",
+      "remotion/**/*",
+      "api-key-guide/**/*"
+    ],
     "files": [
       "main.js",
       "main/**/*",
@@ -61,7 +68,7 @@
       "oneClick": true,
       "perMachine": false,
       "allowToChangeInstallationDirectory": false,
-      "shortcutName": "유튜브도사 영상 제작 솔루션"
+      "shortcutName": "?좏뒠釉뚮룄???곸긽 ?쒖옉 ?붾（??
     },
     "mac": {
       "target": [
@@ -103,3 +110,4 @@
     "remotion": "4.0.250"
   }
 }
+
