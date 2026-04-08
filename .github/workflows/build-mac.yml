@@ -1,116 +1,38 @@
-name: Build macOS (.dmg)
+﻿name: Build macOS DMG
 
 on:
-  workflow_dispatch:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   build-mac:
     runs-on: macos-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Build macOS (arm64, unsigned)
-        run: npm run build:mac
+      - name: Build and Sign DMG
         env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: npm run build:mac
 
-      - name: Debug - show app structure
-        run: |
-          echo "=== dist/ contents ==="
-          find dist -maxdepth 3 -type d
-          echo ""
-          echo "=== Looking for .app ==="
-          find dist -name "*.app" -type d -maxdepth 3
-
-      - name: Ad-hoc codesign (Apple Silicon 실행 필수)
-        run: |
-          set -e
-          APP_PATH=$(find dist -name "*.app" -type d -maxdepth 3 | head -1)
-          echo "App path: $APP_PATH"
-
-          if [ -z "$APP_PATH" ]; then
-            echo "❌ ERROR: .app not found"
-            exit 1
-          fi
-
-          echo ""
-          echo "=== Step 1: Sign all native binaries ==="
-          find "$APP_PATH" -type f \( -name "*.dylib" -o -name "*.so" -o -name "*.node" \) -print0 | while IFS= read -r -d '' f; do
-            echo "  Signing binary: $f"
-            codesign --force --sign - "$f"
-          done
-
-          echo ""
-          echo "=== Step 2: Sign all frameworks ==="
-          find "$APP_PATH/Contents/Frameworks" -name "*.framework" -type d -maxdepth 1 2>/dev/null | while read fw; do
-            echo "  Signing framework: $fw"
-            codesign --force --sign - --entitlements build/entitlements.mac.inherit.plist "$fw"
-          done
-
-          echo ""
-          echo "=== Step 3: Sign helper apps (inside-out) ==="
-          find "$APP_PATH" -name "*.app" -type d -mindepth 1 -maxdepth 5 | sort -r | while read helper; do
-            echo "  Signing helper: $helper"
-            codesign --force --sign - --entitlements build/entitlements.mac.inherit.plist "$helper"
-          done
-
-          echo ""
-          echo "=== Step 4: Sign main app ==="
-          echo "  Signing: $APP_PATH"
-          codesign --force --sign - --entitlements build/entitlements.mac.plist "$APP_PATH"
-
-          echo ""
-          echo "=== Step 5: Verify ==="
-          echo "--- codesign display ---"
-          codesign -dv --verbose=2 "$APP_PATH" 2>&1
-          echo ""
-          echo "--- codesign verify ---"
-          if codesign --verify --deep --strict "$APP_PATH" 2>&1; then
-            echo "✅ Signature valid"
-          else
-            echo "⚠️ Deep verify had warnings (may be OK for ad-hoc)"
-          fi
-          echo ""
-          echo "--- entitlements check ---"
-          codesign -d --entitlements - "$APP_PATH" 2>&1 | head -20
-
-      - name: Recreate DMG and ZIP with signed app
-        run: |
-          APP_PATH=$(find dist -name "*.app" -type d -maxdepth 3 | head -1)
-          VERSION=$(node -p "require('./package.json').version")
-          DMG_NAME="youtube-dosa-${VERSION}-mac-arm64.dmg"
-          ZIP_NAME="youtube-dosa-${VERSION}-mac-arm64.zip"
-
-          rm -f dist/*.dmg dist/*.zip dist/*.blockmap
-
-          hdiutil create \
-            -volname "YouTube-Dosa" \
-            -srcfolder "$APP_PATH" \
-            -ov -format UDZO \
-            "dist/$DMG_NAME"
-
-          ditto -c -k --sequesterRsrc "$APP_PATH" "dist/$ZIP_NAME"
-
-          echo "=== Artifacts created ==="
-          ls -lh "dist/$DMG_NAME" "dist/$ZIP_NAME"
-
-      - name: Upload artifacts
+      - name: Upload DMG
         uses: actions/upload-artifact@v4
         with:
-          name: youtube-dosa-mac
-          path: |
-            dist/*.dmg
-            dist/*.zip
+          name: youtube-dosa-mac-dmg
+          path: dist/*.dmg
           retention-days: 30
