@@ -27,6 +27,15 @@ function _classifyKeyword(text) {
 }
 
 // ── 키워드 유사도 감지 (단순 포함 관계) ──
+// ── v5.0: 순위별 랭크 클래스 (금은동) ──
+function _rankClass(i, source) {
+  if (i === 0) return 'kw-rank-1';  // 금
+  if (i === 1) return 'kw-rank-2';  // 은
+  if (i === 2) return 'kw-rank-3';  // 동
+  if (source === 'google') return i < 5 ? 'kw-rank-gt' : 'kw-rank-off';
+  return i < 5 ? 'kw-rank-top' : 'kw-rank-off';
+}
+
 function _findSimilar(keyword, allKeywords) {
   const t = keyword.trim();
   if (t.length < 2) return null;
@@ -181,7 +190,7 @@ registerStep(2, () => {
     // ═══ 왼쪽: 이슈링크 (또는 Google News 보조) ═══
     const isGoogleFallback = data.source === 'google_news_fallback';
     const ilCard = el('div', { className: 'cd', style: 'border-color:var(--acc-ring);padding:0;overflow:hidden' });
-    const ilHdr = el('div', { style: 'padding:14px 18px;background:rgba(255,71,87,.04);border-bottom:1px solid var(--acc-ring);display:flex;align-items:center;gap:8px' });
+    const ilHdr = el('div', { style: 'padding:14px 18px;background:var(--acc-bg);border-bottom:1px solid var(--acc-ring);display:flex;align-items:center;gap:8px' });
     ilHdr.appendChild(el('span', { style: 'width:8px;height:8px;border-radius:50%;background:var(--acc);display:inline-block;animation:pulse 1.5s infinite' }));
     ilHdr.appendChild(el('span', { style: 'font-size:14px;font-weight:700;color:var(--acc)', textContent: isGoogleFallback ? '실시간 뉴스 핫이슈' : '이슈링크 핫이슈' }));
     ilHdr.appendChild(el('span', { style: 'font-size:10px;font-weight:600;color:#fff;background:var(--acc);padding:2px 8px;border-radius:10px;margin-left:auto', textContent: 'LIVE' }));
@@ -201,13 +210,13 @@ registerStep(2, () => {
         // P1-6: 4위 이하는 접힘 처리
         // 순위 번호
         const rank = el('span', {
-          className: 'kw-rank ' + (i < 3 ? 'kw-rank-top' : 'kw-rank-off'),
+          className: 'kw-rank ' + _rankClass(i, 'hot'),
           textContent: String(i + 1)
         });
         row.appendChild(rank);
         // P1-6: 상위 3개에 추천 뱃지
         if (i < 3) {
-          row.appendChild(el('span', { style: 'font-size:9px;padding:1px 6px;border-radius:4px;background:rgba(255,71,87,.1);color:var(--acc);font-weight:700;flex-shrink:0', textContent: '\uD83D\uDD25 추천' }));
+          row.appendChild(el('span', { style: 'font-size:9px;padding:1px 6px;border-radius:4px;background:var(--acc-bg2);color:var(--acc);font-weight:700;flex-shrink:0', textContent: '\uD83D\uDD25 추천' }));
         }
         // 키워드 텍스트
         row.appendChild(el('span', { className: 'kw-text', textContent: k.keyword }));
@@ -241,7 +250,7 @@ registerStep(2, () => {
         shared.ilKw[zid] = { id: zid, label: k.keyword, src: '줌 실시간', score: 97 - i * 3, tags: [], period: 'daily' };
         const row = el('div', { className: 'kw-row' });
         row.dataset.kwid = zid;
-        row.appendChild(el('span', { className: 'kw-rank ' + (i < 3 ? 'kw-rank-gt' : 'kw-rank-off'), textContent: String(i + 1) }));
+        row.appendChild(el('span', { className: 'kw-rank ' + _rankClass(i, 'realtime'), textContent: String(i + 1) }));
         if (i < 3) row.appendChild(el('span', { style: 'font-size:9px;padding:1px 6px;border-radius:4px;background:rgba(37,99,235,.1);color:#2563EB;font-weight:700;flex-shrink:0', textContent: '\uD83D\uDD25 추천' }));
         row.appendChild(el('span', { className: 'kw-text', textContent: k.keyword }));
         const zcat = _classifyKeyword(k.keyword);
@@ -267,7 +276,7 @@ registerStep(2, () => {
         shared.ilKw[nid] = { id: nid, label: k.keyword, src: '네이트 실시간', score: 95 - i * 3, tags: [], period: 'daily' };
         const row = el('div', { className: 'kw-row' });
         row.dataset.kwid = nid;
-        row.appendChild(el('span', { className: 'kw-rank ' + (i < 3 ? 'kw-rank-gt' : 'kw-rank-off'), textContent: String(i + 1) }));
+        row.appendChild(el('span', { className: 'kw-rank ' + _rankClass(i, 'realtime'), textContent: String(i + 1) }));
         if (i < 3) row.appendChild(el('span', { style: 'font-size:9px;padding:1px 6px;border-radius:4px;background:rgba(249,115,22,.1);color:#F97316;font-weight:700;flex-shrink:0', textContent: '\uD83D\uDD25 추천' }));
         row.appendChild(el('span', { className: 'kw-text', textContent: k.keyword }));
         const ncat = _classifyKeyword(k.keyword);
@@ -293,7 +302,7 @@ registerStep(2, () => {
         shared.ilKw[gid] = { id: gid, label: k.keyword, src: '구글 트렌드', score: 90 - i * 3, tags: [], period: 'daily' };
         const row = el('div', { className: 'kw-row' });
         row.dataset.kwid = gid;
-        row.appendChild(el('span', { className: 'kw-rank ' + (i < 3 ? 'kw-rank-gt' : 'kw-rank-off'), textContent: String(i + 1) }));
+        row.appendChild(el('span', { className: 'kw-rank ' + _rankClass(i, 'realtime'), textContent: String(i + 1) }));
         if (i < 3) row.appendChild(el('span', { style: 'font-size:9px;padding:1px 6px;border-radius:4px;background:rgba(52,168,83,.1);color:#34A853;font-weight:700;flex-shrink:0', textContent: '\uD83D\uDD25 추천' }));
         row.appendChild(el('span', { className: 'kw-text', textContent: k.keyword }));
         const gcat = _classifyKeyword(k.keyword);

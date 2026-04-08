@@ -107,7 +107,7 @@ function rAllFC() {
 
   root.appendChild(_fcBuildTabs(results, page));
 
-  const card = el('div', { className: 'cd', style: 'border-left:4px solid ' + typeColor });
+  const card = el('div', { className: 'cd cd-bar-green', style: 'border-left:4px solid ' + typeColor });
   const hdr = el('div', { className: 'fx-row mb-16' });
 
   hdr.appendChild(

@@ -173,7 +173,8 @@ function _buildVoiceResultCard(r, page, spd) {
   const mn = Math.floor(dur / 60);
   const sc = dur % 60;
 
-  const card = el('div', { className: 'cd', style: 'border-left:4px solid ' + typeColor });
+  const barCls = r.script.type === 'longform' ? 'cd-bar-blue' : 'cd-bar-red';
+  const card = el('div', { className: 'cd ' + barCls, style: 'border-left:4px solid ' + typeColor });
 
   // 헤더
   const hdr = el('div', { className: 'fx-row mb-12' });

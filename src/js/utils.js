@@ -375,9 +375,10 @@ export function createProgress(containerId, title, steps, estimatedSec) {
     barOuter.style.cssText = 'height:12px;background:var(--bg3);border-radius:6px;overflow:hidden;margin-bottom:24px;position:relative';
     const barInner = document.createElement('div');
     if (completed) {
-      barInner.style.cssText = 'height:100%;background:linear-gradient(90deg,var(--grn),#2ecc71);border-radius:6px;width:100%;transition:width .6s ease-out';
+      barInner.style.cssText = 'height:100%;background:linear-gradient(90deg,var(--grn),var(--grn2));border-radius:6px;width:100%;transition:width .6s ease-out;box-shadow:0 0 8px rgba(5,150,105,.3)';
     } else {
-      barInner.style.cssText = 'height:100%;background:linear-gradient(90deg,var(--acc),#2563EB);border-radius:6px;width:' + Math.max(displayPct, 5) + '%;transition:width .6s ease-out;background-size:200% 100%;animation:progShimmer 1.5s ease-in-out infinite';
+      barInner.className = 'progress-shimmer';
+      barInner.style.cssText = 'height:100%;border-radius:6px;width:' + Math.max(displayPct, 5) + '%;transition:width .6s ease-out';
     }
     barOuter.appendChild(barInner);
     wrap.appendChild(barOuter);
@@ -386,16 +387,15 @@ export function createProgress(containerId, title, steps, estimatedSec) {
     const stepBox = document.createElement('div');
     stepBox.style.cssText = 'background:var(--bg);border-radius:var(--r2);padding:12px 16px';
     stepLabels.forEach((s, i) => {
-      const icon = i < currentStep ? '✓' : i === currentStep ? '●' : '○';
-      const color = i < currentStep ? 'var(--grn)' : i === currentStep ? 'var(--acc)' : 'var(--t4)';
+      const stepState = i < currentStep ? 'done' : i === currentStep ? 'active' : '';
       const row = document.createElement('div');
-      row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 0' + (i < stepLabels.length - 1 ? ';border-bottom:1px solid var(--bdr)' : '');
+      row.className = 'ai-step ' + stepState;
+      if (i < stepLabels.length - 1) row.style.borderBottom = '1px solid var(--bdr)';
       const dot = document.createElement('div');
-      dot.style.cssText = 'width:28px;height:28px;border-radius:50%;background:' + (i < currentStep ? 'rgba(13,146,84,.12)' : i === currentStep ? 'rgba(255,71,87,.12)' : 'var(--bg2)') + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;font-weight:700;color:' + color;
-      dot.textContent = icon;
+      dot.className = 'ai-step-dot';
       row.appendChild(dot);
       const label = document.createElement('div');
-      label.style.cssText = 'flex:1;font-size:13px;color:' + (i <= currentStep ? 'var(--t1)' : 'var(--t4)') + ';font-weight:' + (i === currentStep ? '600' : '400');
+      label.style.cssText = 'flex:1;font-size:13px';
       label.textContent = s;
       row.appendChild(label);
       if (i < currentStep) {
@@ -524,7 +524,7 @@ export function confirmModal(message, { confirmText = '확인', cancelText = '�
     overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;animation:cmFadeIn .15s ease';
     // 모달 박스
     const box = document.createElement('div');
-    box.style.cssText = 'background:var(--white,#fff);border-radius:16px;padding:28px 24px 20px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:cmSlideIn .2s ease';
+    box.style.cssText = 'background:var(--card-bg,var(--white,#fff));backdrop-filter:var(--glass-blur,blur(16px));-webkit-backdrop-filter:var(--glass-blur,blur(16px));border:1px solid var(--bdr);border-radius:20px;padding:28px 24px 20px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:cmSlideIn .2s ease';
     // 아이콘
     const iconEl = document.createElement('div');
     iconEl.style.cssText = 'width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:16px;' + (danger ? 'background:var(--red-bg,rgba(201,42,42,.1));color:var(--red,#c92a2a)' : 'background:rgba(37,99,235,.08);color:#2563EB');
@@ -570,7 +570,7 @@ export function promptModal(message, { placeholder = '', confirmText = '확인',
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;animation:cmFadeIn .15s ease';
     const box = document.createElement('div');
-    box.style.cssText = 'background:var(--white,#fff);border-radius:16px;padding:28px 24px 20px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:cmSlideIn .2s ease';
+    box.style.cssText = 'background:var(--card-bg,var(--white,#fff));backdrop-filter:var(--glass-blur,blur(16px));-webkit-backdrop-filter:var(--glass-blur,blur(16px));border:1px solid var(--bdr);border-radius:20px;padding:28px 24px 20px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:cmSlideIn .2s ease';
     // 아이콘
     const iconEl = document.createElement('div');
     iconEl.style.cssText = 'width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:16px;background:rgba(37,99,235,.08);color:#2563EB';

@@ -350,11 +350,12 @@ export async function callGeminiVideoStream(videoId, prompt, { onChunk, onDone, 
       };
 
       // ★ P0-2: 안전 타임아웃 — Main process 크래시 등으로 done/error 미수신 시 리스너 누수 방지
+      // ★ P2-fix: TIMEOUT.ANALYSIS_VIDEO(10분)와 정책 통일 (기존 6분 → 11분, withTimeout보다 1분 여유)
       const safetyTimer = setTimeout(() => {
         try { if (window.electronAPI.cancelLLMStream) window.electronAPI.cancelLLMStream(requestId); } catch (_) {}
         cleanup();
-        settleReject(new Error('영상 분석 스트리밍 타임아웃 (6분)'));
-      }, 360000);
+        settleReject(new Error('영상 분석 스트리밍 타임아웃 (11분)'));
+      }, 660000);
 
       // ★ Fix #4: onLLMStream 통합 API 사용 (개별 리스너 이중 등록 방지)
       const cleanup = window.electronAPI.onLLMStream(requestId, {
@@ -492,11 +493,12 @@ export async function callLLMStream(prompt, { onChunk, onDone, onError, signal }
       };
 
       // ★ P0-2: 안전 타임아웃 — Main process 크래시 등으로 done/error 미수신 시 리스너 누수 방지
+      // ★ P2-fix: TIMEOUT.SCRIPT(10분)와 정책 통일 (기존 6분 → 11분)
       const safetyTimer = setTimeout(() => {
         try { if (window.electronAPI.cancelLLMStream) window.electronAPI.cancelLLMStream(requestId); } catch (_) {}
         cleanup();
-        settleReject(new Error('LLM 스트리밍 타임아웃 (6분)'));
-      }, 360000);
+        settleReject(new Error('LLM 스트리밍 타임아웃 (11분)'));
+      }, 660000);
 
       // ★ Fix #4: onLLMStream 통합 API 사용 (개별 리스너 이중 등록 방지)
       const cleanup = window.electronAPI.onLLMStream(requestId, {
@@ -545,7 +547,8 @@ export async function callLLMStream(prompt, { onChunk, onDone, onError, signal }
           prompt: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS),
           provider: provider === 'chatgpt' ? 'claude' : provider,
           max_tokens: CONFIG.MAX_OUTPUT_TOKENS
-        })
+        }),
+        signal, // ★ P2-fix: 취소 signal 전달 (기존 누락)
       });
 
       if (!resp.ok) {

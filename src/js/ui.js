@@ -366,7 +366,7 @@ export function renderLogin() {
       if (LOGO_SRC) {
         const logoWrap = el('div', { className: 'login-icon' });
         const logoIcon = el('div', { className: 'logo-icon' });
-        const logoImg = el('img'); logoImg.src = LOGO_SRC; logoImg.width = 32; logoImg.height = 32;
+        const logoImg = el('img'); logoImg.src = LOGO_SRC; logoImg.width = 40; logoImg.height = 40;
         logoIcon.appendChild(logoImg);
         logoWrap.appendChild(logoIcon);
         box.appendChild(logoWrap);

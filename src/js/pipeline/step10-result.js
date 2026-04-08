@@ -10,6 +10,7 @@ import { registerStep, runStep, registerAction, runAction } from '../router.js';
 import { shared } from '../shared.js';
 import { trackFeature } from '../telemetry.js';
 import { generateCapcutDraft } from './capcut-draft.js';
+import { ResultHero, DownloadButton, StaggerChildren } from '../components.js';
 
 /* ── URL 허용 호스트 ── */
 const PEXELS_HOSTS = ['pexels.com'];
@@ -122,7 +123,7 @@ registerStep(10, () => {
   const headerWrap = el('div', { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:16px' });
 
   const headerLeft = el('div', { className: 'fx-row', style: 'gap:14px' });
-  headerLeft.appendChild(el('div', { style: 'width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--grn),#2ecc71);display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;box-shadow:0 4px 16px rgba(13,146,84,.25)', textContent: '\u2713' }));
+  headerLeft.appendChild(el('div', { style: 'width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--grn),var(--grn2));display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;box-shadow:0 4px 16px rgba(5,150,105,.3)', className: 'celebrate-icon', textContent: '\u2713' }));
   const headerText = el('div');
   headerText.appendChild(el('h2', { className: 'pt', style: 'margin:0', textContent: '제작 완료' }));
   headerText.appendChild(el('p', { style: 'font-size:13px;color:var(--t3);margin:4px 0 0', textContent: totalScripts + '개 스크립트 · ' + new Date().toLocaleDateString('ko', { month: 'long', day: 'numeric', weekday: 'short' }) }));
@@ -130,7 +131,7 @@ registerStep(10, () => {
   headerWrap.appendChild(headerLeft);
 
   const headerRight = el('div', { className: 'fx-wrap-8' });
-  const dlPkgBtn = el('button', { className: 'btn bp btn-lg', style: 'gap:6px', textContent: '\uD83D\uDCE6 패키지 다운로드' });
+  const dlPkgBtn = el('button', { className: 'btn btn-download', textContent: '\uD83D\uDCE6 패키지 다운로드' });
   dlPkgBtn.addEventListener('click', () => { runAction('downloadPkg'); });
   headerRight.appendChild(dlPkgBtn);
   const newProjBtn = el('button', { className: 'btn bs', textContent: '새 프로젝트' });
@@ -165,37 +166,37 @@ registerStep(10, () => {
   }
 
   // ── 통계 ──
-  const statsGrid = el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:12px;margin-bottom:24px' });
+  const statsGrid = el('div', { style: 'display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px;margin-bottom:24px' });
   const statItems = [
     { val: String(totalScripts), label: '스크립트', color: 'var(--acc)' },
     { val: totalChars.toLocaleString(), label: '총 글자 수', color: 'var(--blu)' },
     { val: String(totalEkw), label: '풋티지 장면', color: 'var(--grn)' },
     { val: String(v.score || '-'), label: '영상 점수', color: 'var(--yel)' }
   ];
-  statItems.forEach(st => {
-    const box = el('div', { style: 'background:var(--white);border:1px solid var(--bdr);border-radius:var(--r2);padding:16px;text-align:center' });
-    box.appendChild(el('div', { style: 'font-size:22px;font-weight:700;font-family:var(--mono);color:' + st.color, textContent: st.val }));
-    box.appendChild(el('div', { className: 'note-xs', textContent: st.label }));
+  statItems.forEach((st, si) => {
+    const box = el('div', { className: 'cd stagger-' + (si + 1), style: 'padding:20px;text-align:center;margin-bottom:0' });
+    box.appendChild(el('div', { className: 'stat-hero', style: 'color:' + st.color, textContent: st.val }));
+    box.appendChild(el('div', { className: 'stat-hero-label', textContent: st.label }));
     statsGrid.appendChild(box);
   });
   root.appendChild(statsGrid);
 
-  // ── 원본 영상 ──
-  const origCard = el('div', { className: 'cd mb-14' });
-  const origRow = el('div', { className: 'fx-row', style: 'gap:14px' });
+  // ── 원본 영상 (히어로) ──
+  const origCard = el('div', { className: 'result-hero mb-14' });
   if (v.thumb) {
     const safeThumb = safeUrl(v.thumb);
     if (safeThumb) {
-      const thumbImg = el('img', { style: 'width:80px;height:45px;border-radius:6px;object-fit:cover' });
+      const thumbWrap = el('div', { style: 'width:120px;aspect-ratio:16/9;border-radius:12px;overflow:hidden;flex-shrink:0' });
+      const thumbImg = el('img', { style: 'width:100%;height:100%;object-fit:cover' });
       thumbImg.src = safeThumb;
-      origRow.appendChild(thumbImg);
+      thumbWrap.appendChild(thumbImg);
+      origCard.appendChild(thumbWrap);
     }
   }
   const origInfo = el('div', { className: 'flex-1' });
-  origInfo.appendChild(el('div', { style: 'font-size:14px;font-weight:600;line-height:1.4', textContent: v.title || '' }));
-  origInfo.appendChild(el('div', { style: 'font-size:12px;color:var(--t3);margin-top:2px', textContent: (v.ch || '') + ' · \u25B6 ' + fmt(v.views || 0) }));
-  origRow.appendChild(origInfo);
-  origCard.appendChild(origRow);
+  origInfo.appendChild(el('div', { style: 'font-size:17px;font-weight:800;line-height:1.4;letter-spacing:-.2px;margin-bottom:6px', textContent: v.title || '' }));
+  origInfo.appendChild(el('div', { style: 'font-size:12px;color:var(--t3)', textContent: (v.ch || '') + ' · \u25B6 ' + fmt(v.views || 0) + (v.subs ? ' · 구독 ' + fmt(v.subs) : '') }));
+  origCard.appendChild(origInfo);
   root.appendChild(origCard);
 
   // ── 탭 페이지네이션 (멀티 스크립트) ──

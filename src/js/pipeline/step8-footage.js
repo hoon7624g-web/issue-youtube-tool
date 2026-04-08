@@ -63,7 +63,7 @@ function _buildSceneCard(s, i, ri, hasPexels) {
   const color = LABEL_COLORS[s.label] || '#6B7280';
   const pxId = 'pexels-' + ri + '-' + i;
 
-  const card = el('div', { className: 'cd', style: 'margin-bottom:14px;border-left:4px solid ' + color });
+  const card = el('div', { className: 'cd cd-bar-acc', style: 'margin-bottom:14px;border-left:4px solid ' + color });
 
   // 헤더
   const headerRow = el('div', { className: 'fx-row-10', style: 'margin-bottom:12px' });

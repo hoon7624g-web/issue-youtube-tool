@@ -5,8 +5,10 @@
 import { el, esc } from './utils.js';
 
 // ── 카드 컴포넌트 ──
-export function Card({ title, subtitle, borderColor, className, children }) {
-  const card = el('div', { className: 'cd ' + (className || '') });
+// barColor: 'blue' | 'green' | 'red' | 'acc' → 상단 3px 컬러바 추가
+export function Card({ title, subtitle, borderColor, barColor, className, children }) {
+  const barCls = barColor ? ' cd-bar-' + barColor : '';
+  const card = el('div', { className: 'cd' + barCls + ' ' + (className || '') });
   if (borderColor) card.style.borderColor = borderColor;
   if (title) {
     const header = el('div', { className: 'card-header' });
@@ -164,3 +166,52 @@ export function DeviceNotice() {
   notice.appendChild(el('span', { textContent: '이 작업 내역은 현재 기기에만 저장됩니다. 다른 PC에서는 이어서 할 수 없습니다. 최종 ZIP은 꼭 별도로 보관하세요.' }));
   return notice;
 }
+
+// ══════════════════════════════════════
+// v5.0 NEW COMPONENTS
+// ══════════════════════════════════════
+
+// ── 결과 히어로 섹션 ──
+export function ResultHero({ title, thumb, stats }) {
+  const hero = el('div', { className: 'result-hero' });
+  if (thumb) {
+    const thumbEl = el('div', { style: 'width:120px;aspect-ratio:16/9;border-radius:12px;overflow:hidden;flex-shrink:0' });
+    const img = el('img', { style: 'width:100%;height:100%;object-fit:cover' });
+    img.src = thumb;
+    thumbEl.appendChild(img);
+    hero.appendChild(thumbEl);
+  }
+  const info = el('div');
+  if (title) info.appendChild(el('div', { style: 'font-size:18px;font-weight:800;color:var(--t1);margin-bottom:12px;letter-spacing:-.3px;line-height:1.4', textContent: title }));
+  if (stats && stats.length) {
+    const statsRow = el('div', { className: 'result-hero-stats' });
+    stats.forEach(s => {
+      const stat = el('div', { className: 'result-hero-stat' });
+      stat.appendChild(el('div', { className: 'stat-hero', textContent: s.value }));
+      stat.appendChild(el('div', { className: 'stat-hero-label', textContent: s.label }));
+      statsRow.appendChild(stat);
+    });
+    info.appendChild(statsRow);
+  }
+  hero.appendChild(info);
+  return hero;
+}
+
+// ── 다운로드 CTA 버튼 ──
+export function DownloadButton(text, onClick, { icon, size } = {}) {
+  const btn = el('button', { className: 'btn btn-download' + (size === 'sm' ? ' btn-sm' : '') });
+  if (icon) btn.appendChild(el('span', { textContent: icon, style: 'font-size:16px' }));
+  btn.appendChild(document.createTextNode(text));
+  if (onClick) btn.addEventListener('click', onClick);
+  return btn;
+}
+
+// ── 순차 등장 컨테이너 ──
+export function StaggerChildren(parent, startIdx = 1) {
+  const children = parent.children;
+  for (let i = 0; i < children.length && i < 5; i++) {
+    children[i].classList.add('stagger-' + (startIdx + i));
+  }
+  return parent;
+}
+

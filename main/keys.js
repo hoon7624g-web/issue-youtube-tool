@@ -85,7 +85,10 @@ function registerKeyIPC(ipcMain, assertTrustedSender) {
     if (!legacyKeys || typeof legacyKeys !== 'object' || Array.isArray(legacyKeys)) return false;
     const sanitized = {};
     for (const k of ALLOWED_API_KEYS) {
-      if (typeof legacyKeys[k] === 'string') sanitized[k] = legacyKeys[k];
+      if (typeof legacyKeys[k] === 'string') {
+        const value = legacyKeys[k].trim();
+        if (value) sanitized[k] = value;
+      }
     }
     if (Object.keys(sanitized).length === 0) return false;
     const current = readEncryptedKeys();
@@ -205,7 +208,10 @@ function registerKeyIPC(ipcMain, assertTrustedSender) {
       // 유효성 검증 후 저장
       const sanitized = {};
       for (const k of ALLOWED_API_KEYS) {
-        if (typeof keys[k] === 'string') sanitized[k] = keys[k];
+        if (typeof keys[k] === 'string') {
+          const value = keys[k].trim();
+          if (value) sanitized[k] = value;
+        }
       }
       if (Object.keys(sanitized).length === 0) return { ok: false, error: '유효한 API 키가 없습니다' };
 

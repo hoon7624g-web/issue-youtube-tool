@@ -52,7 +52,7 @@ function rAna() {
   sumHdr.appendChild(CopyButton(() => a.summary || ''));
   sumHdr.querySelector('.btn').style.cssText = 'margin-left:auto;font-size:11px';
   const sumBody = el('p', { style: 'font-size:14px;line-height:1.9;color:var(--t2)', textContent: a.summary || '' });
-  root.appendChild(Card({ children: [sumHdr, sumBody] }));
+  root.appendChild(Card({ barColor: 'blue', children: [sumHdr, sumBody] }));
 
   // 훅 포인트 + 잘된 이유
   const grid = el('div', { className: 'g2' });
@@ -61,13 +61,13 @@ function rAna() {
   hookHdr.appendChild(el('div', { className: 'st mb-0', textContent: '훅 포인트' }));
   hookHdr.appendChild(CopyButton(() => (a.hooks || []).join('\n')));
   hookHdr.querySelector('.btn').style.cssText = 'margin-left:auto;font-size:11px';
-  grid.appendChild(Card({ children: [hookHdr, AccentList(a.hooks, 'al-acc')] }));
+  grid.appendChild(Card({ barColor: 'acc', children: [hookHdr, AccentList(a.hooks, 'al-acc')] }));
 
   const reasonHdr = el('div', { className: 'fx-row mb-8' });
   reasonHdr.appendChild(el('div', { className: 'st mb-0', textContent: '잘된 이유' }));
   reasonHdr.appendChild(CopyButton(() => (a.reasons || []).join('\n')));
   reasonHdr.querySelector('.btn').style.cssText = 'margin-left:auto;font-size:11px';
-  grid.appendChild(Card({ children: [reasonHdr, AccentList(a.reasons, 'al-grn')] }));
+  grid.appendChild(Card({ barColor: 'green', children: [reasonHdr, AccentList(a.reasons, 'al-grn')] }));
   root.appendChild(grid);
 
   // 영상 구조 (+ 복사 버튼 — #7 수정)

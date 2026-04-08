@@ -18,9 +18,8 @@ async function _fetchVideoInfo(videoId, signal) {
   // 1순위: YouTube Data API (Electron IPC — CSP 안전)
   if (hasYtKey()) {
     try {
-      // ytFetch()는 raw JSON을 반환 (Electron: r.data, 웹: r.json() 결과)
-      // { status, data } 형태가 아님 — getVids 등 다른 호출부와 계약 통일
-      const data = await ytFetch('videos', { part: 'snippet,statistics', id: videoId, maxResults: '1' });
+      // ★ P2-fix: signal 전달 — 취소 시 불필요한 API 호출 방지
+      const data = await ytFetch('videos', { part: 'snippet,statistics', id: videoId, maxResults: '1' }, { signal });
       if (data && data.items && data.items.length > 0) {
         const item = data.items[0];
         const snippet = item.snippet || {};

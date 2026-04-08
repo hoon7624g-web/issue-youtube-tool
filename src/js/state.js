@@ -94,7 +94,7 @@ function _saveLsNow() {
       search: { skw: S.search.skw, filterDuration: S.search.filterDuration, filterPeriod: S.search.filterPeriod }, video: { sv: S.video.sv },
       analysis: { ana: S.analysis.ana },
       script: { sty: S.script.sty, scr: S.script.scr, scrDual: S.script.scrDual, es: S.script.es },
-      voice: { selVoice: S.voice.selVoice }
+      voice: { selVoice: S.voice.selVoice, voiceSpeed: S.voice.voiceSpeed }
     }));
   } catch(e) { console.warn('[LS] save failed:', e.message); }
 }

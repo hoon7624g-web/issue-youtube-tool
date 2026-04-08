@@ -183,9 +183,16 @@ export function initApiKeys() {
           return window.electronAPI.migrateApiKeys(legacy).then(ok => {
             if (ok) {
               localStorage.removeItem('yt_api_keys');
-              _keyCache = legacy;
-              _keyCacheReady = true;
-              return legacy;
+              // ★ P2-fix: main에서 sanitize된 키를 재로드 (raw legacy와의 불일치 방지)
+              return window.electronAPI.getApiKeys().then(sanitized => {
+                _keyCache = sanitized && Object.keys(sanitized).length > 0 ? sanitized : legacy;
+                _keyCacheReady = true;
+                return _keyCache;
+              }).catch(() => {
+                _keyCache = legacy;
+                _keyCacheReady = true;
+                return legacy;
+              });
             }
             _keyCacheReady = true;
             return {};

@@ -63,11 +63,14 @@ import { callLLM } from './client-proxy-llm.js';
 import { cacheGet, cacheSet } from './js/cache.js';
 
 // ── YouTube API ──
-export async function ytFetch(endpoint, params) {
+// ★ P2-fix: signal 파라미터 추가 — 취소/timeout 지원
+export async function ytFetch(endpoint, params, { signal } = {}) {
   params = params || {};
   // Electron: Main IPC로 키 노출 방지
   if (window.electronAPI && window.electronAPI.ytFetch) {
     const r = await window.electronAPI.ytFetch(endpoint, params);
+    // IPC 경로에서는 signal 직접 전달 불가 — 반환 후 signal 체크
+    if (signal && signal.aborted) throw new Error('사용자가 작업을 취소했습니다.');
     if (r.status === 403) {
       const reason = (r.data && r.data.error && r.data.error.errors && r.data.error.errors[0] && r.data.error.errors[0].reason) || '';
       if (reason === 'quotaExceeded') throw new Error('YouTube API 일일 할당량을 초과했습니다. 한국 시간 오후 4시경(태평양 자정)에 초기화됩니다.');
@@ -83,7 +86,7 @@ export async function ytFetch(endpoint, params) {
   if (!keys.youtube) throw new Error('YouTube API 키를 설정해주세요');
   params.key = keys.youtube;
   const qs = Object.keys(params).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k])).join('&');
-  const r = await fetch('https://www.googleapis.com/youtube/v3/' + endpoint + '?' + qs);
+  const r = await fetch('https://www.googleapis.com/youtube/v3/' + endpoint + '?' + qs, signal ? { signal } : undefined);
   if (r.status === 403) {
     try {
       const d = await r.json();

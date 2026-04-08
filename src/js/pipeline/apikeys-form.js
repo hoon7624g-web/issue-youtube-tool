@@ -256,7 +256,7 @@ export function buildApiKeyFormDOM(keys, btnLabel, container) {
   guideText.appendChild(el('strong', { textContent: '처음이신가요?' }));
   guideText.appendChild(document.createTextNode(' API 키 발급 방법을 단계별로 안내해드립니다.'));
   guide.appendChild(guideText);
-  const guideLink = el('a', { id: 'apiGuideLink', style: 'font-size:12px;color:var(--acc);white-space:nowrap;text-decoration:none;font-weight:700;background:rgba(255,71,87,.08);padding:4px 10px;border-radius:6px;border:1px solid rgba(255,71,87,.2);cursor:pointer', textContent: '\uD83D\uDCD6 발급 가이드 \u2197' });
+  const guideLink = el('a', { id: 'apiGuideLink', style: 'font-size:12px;color:var(--acc);white-space:nowrap;text-decoration:none;font-weight:700;background:var(--acc-bg);padding:4px 10px;border-radius:6px;border:1px solid var(--acc-ring);cursor:pointer', textContent: '\uD83D\uDCD6 발급 가이드 \u2197' });
   guideLink.href = '#'; guideLink.target = '_blank'; guideLink.rel = 'noopener';
   guideLink.addEventListener('click', (e) => {
     e.preventDefault();

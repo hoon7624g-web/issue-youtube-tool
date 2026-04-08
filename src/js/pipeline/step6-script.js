@@ -175,7 +175,7 @@ function _showRetryError(msg) {
 // ── 롱폼 카드 빌더 ──
 function _buildLongformCard(lf) {
   const lfCharMin = Math.floor(lf.content.length / 350);
-  const lfCard = el('div', { className: 'cd script-sel', style: 'border-left:4px solid #2563EB;cursor:pointer;transition:all .2s;margin-bottom:0' });
+  const lfCard = el('div', { className: 'cd cd-bar-blue script-sel', style: 'border-left:4px solid #2563EB;cursor:pointer;transition:all .2s;margin-bottom:0' });
   lfCard.dataset.key = 'longform';
 
   const lfHeader = el('div', { className: 'cdh mb-12' });
@@ -212,7 +212,7 @@ function _buildLongformCard(lf) {
 
 // ── 숏폼 카드 빌더 ──
 function _buildShortsCard(shorts) {
-  const sfCard = el('div', { className: 'cd', style: 'border-left:4px solid #DC2626;margin-bottom:0' });
+  const sfCard = el('div', { className: 'cd cd-bar-red', style: 'border-left:4px solid #DC2626;margin-bottom:0' });
   sfCard.appendChild(el('div', { className: 'mb-14' }, [
     el('span', { style: 'font-size:11px;font-weight:600;color:#DC2626;background:rgba(220,38,38,.1);padding:3px 8px;border-radius:4px', textContent: '숏폼 30초~1분 \u00D7 ' + shorts.length + '개' })
   ]));
@@ -424,11 +424,11 @@ registerStep(6, () => {
       sout.textContent = '';
 
       // ── 실시간 미리보기 UI 구성 ──
-      const liveCard = el('div', { className: 'cd', style: 'border-left:4px solid #2563EB' });
+      const liveCard = el('div', { className: 'cd cd-bar-blue', style: 'border-left:4px solid #2563EB' });
       const liveHeader = el('div', { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px' });
       const liveHeaderLeft = el('div', { className: 'fx-row' });
       liveHeaderLeft.appendChild(el('span', { className: 'badge-longform', textContent: '롱폼 실시간 생성 중' }));
-      const liveDot = el('span', { style: 'display:inline-block;width:8px;height:8px;border-radius:50%;background:#2563EB;animation:pulse 1s infinite' });
+      const liveDot = el('span', { className: 'glow-pulse', style: 'display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--acc)' });
       liveHeaderLeft.appendChild(liveDot);
       const liveBadge = liveHeaderLeft.querySelector('span');
       liveHeader.appendChild(liveHeaderLeft);
@@ -437,6 +437,7 @@ registerStep(6, () => {
       liveCard.appendChild(liveHeader);
 
       const liveArea = el('div', {
+        className: 'streaming-cursor',
         style: 'font-size:13px;line-height:1.8;min-height:200px;max-height:400px;overflow-y:auto;white-space:pre-wrap;color:var(--t1);padding:12px;background:var(--bg);border-radius:var(--r);border:1px solid var(--bdr)'
       });
       liveCard.appendChild(liveArea);

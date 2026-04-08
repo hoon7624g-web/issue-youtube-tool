@@ -72,6 +72,21 @@ async function callLLMWithJsonRetry(prompt, parseFn, fallback, options = {}) {
   return fallback;
 }
 
+// ★ P1-fix: JSON 재시도 + raw 텍스트 반환 (3차 호출 방지용)
+async function callLLMWithJsonRetryRaw(prompt, parseFn, options = {}) {
+  const raw = await callLLM(prompt, { signal: options.signal });
+  const parsed = parseFn(raw);
+  if (parsed !== null) return { parsed, raw };
+  console.warn('[JSON retry] First attempt failed, retrying...');
+  const retryPrompt = prompt + '\n\n[중요] 이전 응답이 올바른 JSON이 아니었습니다. 반드시 순수 JSON만 응답하세요. 마크다운 코드블록(```)으로 감싸지 마세요.';
+  const raw2 = await callLLM(retryPrompt, { signal: options.signal });
+  const parsed2 = parseFn(raw2);
+  if (parsed2 !== null) return { parsed: parsed2, raw: raw2 };
+  console.warn('[JSON retry] Retry failed, returning raw for text fallback');
+  showFallbackNoticeOnce(options.noticeKey, options.noticeMessage);
+  return { parsed: null, raw: raw2 };
+}
+
 // ── 숏폼 JSON 파싱 (공통) ──
 function _parseShortsJSON(t) {
   const j = extractJSON(t);
@@ -257,13 +272,14 @@ export const Api = {
       if (j && typeof j.summary === 'string' && j.summary.length > 10 && Array.isArray(j.hooks)) return j;
       return null;
     };
-    const result = await callLLMWithJsonRetry(prompt, strictParse, null, {
+    // ★ P1-fix: 3차 callLLM 제거 — 2차 raw 텍스트를 text fallback으로 재사용
+    const { parsed, raw } = await callLLMWithJsonRetryRaw(prompt, strictParse, {
       noticeKey: 'analyze-json-fallback',
       noticeMessage: '영상 분석 응답 형식이 불안정해 텍스트 fallback으로 보정했습니다.',
       signal,
     });
-    const parsed = result ? parseAnalysisResult(JSON.stringify(result)) : parseAnalysisResult(await callLLM(prompt, { signal }));
-    return finalizeAnalysisMeta(parsed, { method: resolveFallbackMethod(transcript) });
+    const final = parsed ? parseAnalysisResult(JSON.stringify(parsed)) : parseAnalysisResult(raw);
+    return finalizeAnalysisMeta(final, { method: resolveFallbackMethod(transcript) });
   },
 
   genScript: (ana, sty, styPrompt) => {
