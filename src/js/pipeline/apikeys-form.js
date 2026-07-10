@@ -7,7 +7,7 @@
 //   P0-4: safeStorage 불가 시 모달 경고 + 세션 전용 모드
 // ═══════════════════════════════════════
 import { $, esc, toast, confirmModal, el, TIMING, promptModal } from '../utils.js';
-import { getApiKeys, setApiKeys, reloadApiKeys } from '../../client-proxy.js';
+import { getApiKeys, setApiKeys, reloadApiKeys, isKeySaved } from '../../client-proxy.js';
 import { runStep } from '../router.js';
 import { validateSingleKey } from './apikeys-validation.js';
 
@@ -19,6 +19,9 @@ export function isSessionOnlyMode() { return _sessionOnlyMode; }
 export function setSessionOnlyMode(v) { _sessionOnlyMode = v; }
 
 // ── API 키 저장 ──
+// ★ v3.6.2 P0-1: 빈 필드는 main에서 기존 값을 유지한다 (merge).
+//   사용자가 의도적으로 비우면 placeholder가 "저장됨 — 변경 시에만 다시 입력"이므로 변경 의도 없음으로 본다.
+//   완전 삭제는 별도 "전체 삭제" 버튼 또는 v3.7의 개별 delete 버튼으로.
 export async function saveApiKeys() {
   const yt = ($('keyYt') || {}).value || '';
   const claude = ($('keyClaude') || {}).value || '';
@@ -36,10 +39,36 @@ export async function saveApiKeys() {
   if (llmProvider === 'chatgpt') { openai = ($('keyChatgpt') || {}).value || ''; }
   const geminiVideoModel = ($('geminiVideoModel') || {}).value || 'gemini-2.5-pro';
   const claudeModel = ($('claudeModel') || {}).value || 'claude-sonnet-4-20250514';
-  if (!yt.trim()) { toast('YouTube API 키를 입력해주세요', 'err'); return false; }
-  const hasLlm = (llmProvider === 'claude' && claude) || (llmProvider === 'gemini' && gemini) || (llmProvider === 'chatgpt' && openai);
-  if (!hasLlm) { toast('AI 모델 키를 입력해주세요', 'err'); return false; }
-  const result = await setApiKeys({ youtube: yt.trim(), claude: claude.trim(), gemini: gemini.trim(), openai: openai.trim(), tts: tts.trim(), elevenlabs: elevenlabs.trim(), pexels: pexels.trim(), googleAiStudio: googleAiStudio.trim(), perplexity: perplexity.trim(), llmProvider: llmProvider, geminiVideoModel: geminiVideoModel, claudeModel: claudeModel });
+
+  // ★ v3.6.2 P0-1: 필수 검증은 입력값 OR 기존 저장 둘 중 하나라도 있으면 통과
+  const ytOk = yt.trim() || isKeySaved('youtube');
+  if (!ytOk) { toast('YouTube API 키를 입력해주세요', 'err'); return false; }
+  const llmOk =
+    (llmProvider === 'claude'  && (claude.trim()  || isKeySaved('claude')))  ||
+    (llmProvider === 'gemini'  && (gemini.trim()  || isKeySaved('gemini')))  ||
+    (llmProvider === 'chatgpt' && (openai.trim()  || isKeySaved('openai')));
+  if (!llmOk) { toast('AI 모델 키를 입력해주세요', 'err'); return false; }
+
+  // 변경된 필드만 payload에 담아 보낸다 (main이 기존 값과 merge)
+  // 비밀 키: trim 후 비어있으면 미포함
+  // 설정 키(llmProvider/모델): 항상 포함 (사용자가 명시적으로 토글했을 수 있음)
+  const payload = {
+    llmProvider: llmProvider,
+    geminiVideoModel: geminiVideoModel,
+    claudeModel: claudeModel,
+  };
+  const maybeAdd = (k, v) => { const t = (v || '').trim(); if (t) payload[k] = t; };
+  maybeAdd('youtube', yt);
+  maybeAdd('claude', claude);
+  maybeAdd('gemini', gemini);
+  maybeAdd('openai', openai);
+  maybeAdd('tts', tts);
+  maybeAdd('elevenlabs', elevenlabs);
+  maybeAdd('pexels', pexels);
+  maybeAdd('googleAiStudio', googleAiStudio);
+  maybeAdd('perplexity', perplexity);
+
+  const result = await setApiKeys(payload);
   if (!result || !result.ok) throw new Error((result && result.error) || 'API 키 저장에 실패했습니다.');
   return result;
 }
@@ -193,20 +222,38 @@ function _bindInlineValidation(inputId, provider) {
 // ═══════════════════════════════════════
 // DOM 헬퍼
 // ═══════════════════════════════════════
-function _mkKeyField(mainLabel, badgeText, badgeColor, id, value, placeholder, noteText, opts) {
+// ★ v3.6.2 P0-1: saved 상태일 때 value를 비우고 placeholder로 안내한다.
+//   value 인자는 무시되고 saved bool/string에 따라 표시만 바뀐다.
+function _placeholderFor(saved, fallback) {
+  return saved ? '저장됨 — 변경 시에만 다시 입력' : (fallback || '');
+}
+
+function _mkKeyField(mainLabel, badgeText, badgeColor, id, savedFlag, placeholder, noteText, opts) {
   opts = opts || {};
   const field = el('div', { className: 'field', id: opts.fieldId || '' });
   if (opts.fieldStyle) field.style.cssText = opts.fieldStyle;
   field.appendChild(_mkLabelDOM(mainLabel, badgeText, badgeColor));
   const inputWrap = el('div', { className: 'key-input-wrap', style: 'display:flex;align-items:center;gap:6px' });
   const inp = el('input', { className: 'inp', id: id, style: 'font-family:var(--mono);font-size:13px;flex:1' + (opts.inputStyle || '') });
-  inp.type = 'password'; inp.value = value || ''; inp.placeholder = placeholder || '';
+  // ★ P0-1: saved 키는 value를 비우고 placeholder로만 안내
+  inp.type = 'password';
+  inp.value = '';
+  inp.placeholder = _placeholderFor(!!savedFlag, placeholder);
+  if (savedFlag) inp.dataset.saved = '1';
   if (opts.display) inputWrap.style.display = opts.display;
   inputWrap.appendChild(inp);
   inputWrap.appendChild(_createEyeToggle(id));
   inputWrap.appendChild(_createInlineStatus(id));
   field.appendChild(inputWrap);
   if (noteText) field.appendChild(el('p', { style: 'font-size:11px;color:var(--t4);margin-top:4px;line-height:1.5', textContent: noteText }));
+  // saved 키: 저장됨 뱃지를 라벨 옆에 표시
+  if (savedFlag) {
+    const lbl = field.querySelector('label');
+    if (lbl) lbl.appendChild(el('span', {
+      style: 'margin-left:8px;font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;background:rgba(13,146,84,.1);color:var(--grn)',
+      textContent: '\u2713 저장됨'
+    }));
+  }
   return field;
 }
 
@@ -279,9 +326,10 @@ export function buildApiKeyFormDOM(keys, btnLabel, container) {
   container.appendChild(guide);
 
   // ═══ 1단계: 필수 키 ═══
+  // ★ v3.6.2 P0-1: keys.X는 Electron에서는 bool, 웹에서는 string. 두 환경 모두 !! 변환으로 saved 판정.
   container.appendChild(_mkStepHeader('1단계', 'var(--acc)', '필수 설정', '— 이것만 있으면 바로 시작할 수 있습니다'));
   const reqCard = el('div', { className: 'cd', style: 'padding:24px;border-color:var(--acc-ring)' });
-  reqCard.appendChild(_mkKeyField('YouTube API Key', '*필수', 'var(--red)', 'keyYt', keys.youtube, 'AIza...', 'Google Cloud Console \u2192 YouTube Data API v3 활성화 \u2192 API 키'));
+  reqCard.appendChild(_mkKeyField('YouTube API Key', '*필수', 'var(--red)', 'keyYt', !!keys.youtube, 'AIza...', 'Google Cloud Console \u2192 YouTube Data API v3 활성화 \u2192 API 키'));
 
   // LLM 선택
   const llmField = el('div', { className: 'field' });
@@ -292,23 +340,28 @@ export function buildApiKeyFormDOM(keys, btnLabel, container) {
   llmTabs.appendChild(_mkLlmTab('llmChatgpt', 'ChatGPT', isChatgpt));
   llmTabs.querySelectorAll('[id]').forEach(t => { t.dataset.llm = t.id; });
   llmField.appendChild(llmTabs);
-  const mkLlmInput = (id, val, ph, show) => {
+  // ★ v3.6.2 P0-1: LLM 입력도 placeholder 모드 (saved 시 value 비움)
+  const mkLlmInput = (id, savedFlag, fallbackPh, show) => {
     const wrap = el('div', { className: 'key-input-wrap', style: 'display:' + (show ? 'flex' : 'none') + ';align-items:center;gap:6px' });
     const inp = el('input', { className: 'inp', id: id, style: 'font-family:var(--mono);font-size:13px;flex:1' });
-    inp.type = 'password'; inp.value = val || ''; inp.placeholder = ph;
+    inp.type = 'password';
+    inp.value = '';
+    inp.placeholder = _placeholderFor(!!savedFlag, fallbackPh);
+    if (savedFlag) inp.dataset.saved = '1';
     wrap.appendChild(inp);
     wrap.appendChild(_createEyeToggle(id));
     wrap.appendChild(_createInlineStatus(id));
     return wrap;
   };
-  llmField.appendChild(mkLlmInput('keyClaude', keys.claude, 'sk-ant-...', isClaude));
-  llmField.appendChild(mkLlmInput('keyGemini', keys.gemini, 'AIza...', isGemini));
-  llmField.appendChild(mkLlmInput('keyChatgpt', keys.openai, 'sk-...', isChatgpt));
+  llmField.appendChild(mkLlmInput('keyClaude', !!keys.claude, 'sk-ant-...', isClaude));
+  llmField.appendChild(mkLlmInput('keyGemini', !!keys.gemini, 'AIza...', isGemini));
+  llmField.appendChild(mkLlmInput('keyChatgpt', !!keys.openai, 'sk-...', isChatgpt));
   llmField.appendChild(el('p', { style: 'font-size:11px;color:var(--t4);margin-top:4px;line-height:1.5', textContent: 'Claude: console.anthropic.com | Gemini: aistudio.google.com | ChatGPT: platform.openai.com\n\uD83D\uDCA1 Gemini를 선택하면 같은 키로 영상 분석(Google AI)도 가능합니다.' }));
   reqCard.appendChild(llmField);
 
   // Google AI
-  const gaiField = _mkKeyField('Google AI 키 (영상 분석)', '*필수', 'var(--red)', 'keyGaiStudio', isGemini ? '' : keys.googleAiStudio, isGemini ? 'Gemini 키가 자동 적용됩니다' : 'aistudio.google.com에서 발급한 키 입력', 'YouTube 영상을 AI로 직접 분석할 때 사용합니다. Gemini 키와 동일한 Google AI Studio 키입니다.', { fieldId: 'gaiStudioField', fieldStyle: isGemini ? 'opacity:0.5;pointer-events:none' : '' });
+  // ★ v3.6.2 P0-1: Gemini 탭일 때는 자동 적용 안내, 그 외는 saved 플래그
+  const gaiField = _mkKeyField('Google AI 키 (영상 분석)', '*필수', 'var(--red)', 'keyGaiStudio', isGemini ? false : !!keys.googleAiStudio, isGemini ? 'Gemini 키가 자동 적용됩니다' : 'aistudio.google.com에서 발급한 키 입력', 'YouTube 영상을 AI로 직접 분석할 때 사용합니다. Gemini 키와 동일한 Google AI Studio 키입니다.', { fieldId: 'gaiStudioField', fieldStyle: isGemini ? 'opacity:0.5;pointer-events:none' : '' });
   // P0-1: DOM으로 gaiNote 조립
   const gaiNote = el('div', { id: 'gaiStudioNote', style: 'display:' + (isGemini ? 'block' : 'none') + ';margin-top:8px;padding:10px 14px;background:rgba(66,133,244,.06);border:1px solid rgba(66,133,244,.15);border-radius:var(--r2);font-size:12px;color:#4285F4;line-height:1.6' });
   gaiNote.appendChild(document.createTextNode('\uD83D\uDCA1 '));
@@ -342,10 +395,10 @@ export function buildApiKeyFormDOM(keys, btnLabel, container) {
 
   const optBody = el('div', { id: 'optionalKeysBody', style: 'display:' + (hasOptionalKeys ? 'block' : 'none') });
   const optCard = el('div', { className: 'cd', style: 'padding:24px;margin-top:2px;border-top:none;border-top-left-radius:0;border-top-right-radius:0' });
-  optCard.appendChild(_mkKeyField('Google TTS API Key', '(선택 — AI 음성 생성)', 'var(--t4)', 'keyTts', keys.tts, 'AIza...', 'Google Cloud Console \u2192 Cloud Text-to-Speech API 활성화'));
-  optCard.appendChild(_mkKeyField('ElevenLabs API Key', '(선택 — 프리미엄 음성)', 'var(--t4)', 'keyEl', keys.elevenlabs, '프리미엄 음성을 사용하려면 입력', ''));
-  optCard.appendChild(_mkKeyField('Pexels API Key', '(선택 — 무료 영상 소스)', 'var(--t4)', 'keyPexels', keys.pexels, 'pexels.com/api (무료)', ''));
-  optCard.appendChild(_mkKeyField('Perplexity API Key', '(선택 — 팩트체크 강화)', 'var(--t4)', 'keyPerp', keys.perplexity, '팩트체크 강화용', ''));
+  optCard.appendChild(_mkKeyField('Google TTS API Key', '(선택 — AI 음성 생성)', 'var(--t4)', 'keyTts', !!keys.tts, 'AIza...', 'Google Cloud Console \u2192 Cloud Text-to-Speech API 활성화'));
+  optCard.appendChild(_mkKeyField('ElevenLabs API Key', '(선택 — 프리미엄 음성)', 'var(--t4)', 'keyEl', !!keys.elevenlabs, '프리미엄 음성을 사용하려면 입력', ''));
+  optCard.appendChild(_mkKeyField('Pexels API Key', '(선택 — 무료 영상 소스)', 'var(--t4)', 'keyPexels', !!keys.pexels, 'pexels.com/api (무료)', ''));
+  optCard.appendChild(_mkKeyField('Perplexity API Key', '(선택 — 팩트체크 강화)', 'var(--t4)', 'keyPerp', !!keys.perplexity, '팩트체크 강화용', ''));
 
   const modelSection = el('div', { style: 'border-top:1px solid var(--bdr);padding-top:16px;margin-top:8px' });
   const geminiModelField = el('div', { className: 'field' });
@@ -551,10 +604,15 @@ export function bindFormEvents(validateAllKeys) {
     });
   }
   // 저장된 키 개수 표시
+  // ★ v3.6.2 P0-1: 비밀 키만 카운트 (bool/string 양쪽 환경 호환)
   const savedInfo = $('lastSavedInfo');
   if (savedInfo) {
     const keys = getApiKeys();
-    const count = Object.values(keys).filter(v => typeof v === 'string' && v.trim()).length;
+    const SECRET_FIELDS = ['youtube','claude','gemini','openai','tts','elevenlabs','pexels','googleAiStudio','perplexity'];
+    const count = SECRET_FIELDS.filter(k => {
+      const v = keys[k];
+      return v === true || (typeof v === 'string' && v.trim());
+    }).length;
     savedInfo.textContent = count > 0 ? '현재 ' + count + '개 키 저장됨' : '저장된 키 없음';
   }
 

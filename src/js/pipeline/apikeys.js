@@ -130,7 +130,8 @@ function _highlightGoalFields(goal) {
 
 export function showApiKeySettings() {
   const keys = getApiKeys();
-  const hasAnyKey = Object.values(keys).some(v => typeof v === 'string' && v.trim());
+  // ★ v3.6.2 P0-1: bool/string 양쪽 환경 호환
+  const hasAnyKey = Object.values(keys).some(v => v === true || (typeof v === 'string' && v.trim()));
   if (!hasAnyKey) { _showGoalSelector(); }
   else { _renderApiKeyForm($('p2'), '저장하고 시작하기 \u2192', () => { runStep(2); }); }
 }

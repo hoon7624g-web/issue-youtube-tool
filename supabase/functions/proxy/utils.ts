@@ -53,6 +53,14 @@ export function getClientIp(req: Request): string {
   return "unknown";
 }
 
+// ★ v3.6.2 P1-1: 이메일 등 식별자 해시 (계정 단위 brute-force 방어용)
+//   usage_logs에 평문 이메일을 남기지 않기 위해 SHA-256 hex로 변환.
+export async function sha256Hex(input: string): Promise<string> {
+  const bytes = new TextEncoder().encode(input);
+  const hash = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 // ── 응답 헬퍼 ──
 export function json(cors: Record<string, string>, data: unknown, status = 200, extraHeaders: Record<string, string> = {}) {
   return new Response(JSON.stringify(data), {

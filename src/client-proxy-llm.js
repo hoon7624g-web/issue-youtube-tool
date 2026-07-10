@@ -16,8 +16,21 @@ const _webFallbackWarned = {};
 
 // ★ P1-3: Gemini 키 해석 공통화 — main process와 동일 규칙
 // googleAiStudio → gemini 순서로 fallback
-function getGeminiKey(keys) { return keys.googleAiStudio || keys.gemini || ''; }
+// ★ v3.6.2 P0-1: bool(Electron status) vs string(웹) 구분.
+//   Electron에서는 _keyCache가 status snapshot이라 값이 true/false다. 웹 fallback fetch에 bool이 섞이면
+//   '?key=true' 같은 잘못된 URL이 만들어진다. 따라서 raw key 추출은 string만 인정한다.
+function _firstString(...vals) {
+  for (const v of vals) { if (typeof v === 'string' && v) return v; }
+  return '';
+}
+function getGeminiKey(keys) { return _firstString(keys.googleAiStudio, keys.gemini); }
 function hasGeminiKey(keys) { return !!(keys.googleAiStudio || keys.gemini); }
+// ★ v3.6.2 P0-1: 웹 fallback 진입 직전 호출 — Electron status가 잘못 흘러들어왔는지 검증
+function _assertRawKey(provider, key) {
+  if (typeof key !== 'string' || !key) {
+    throw new Error(provider + ' API 호출 실패: 키가 메인 프로세스에만 보관되어 있습니다. 앱을 다시 시작해주세요.');
+  }
+}
 
 function _attachStreamAbort(signal, requestId, cleanup, reject, clearSafetyTimer) {
   if (!signal) return () => {};
@@ -148,6 +161,7 @@ async function _callChatGPT(prompt, { signal } = {}) {
     return r.text || '';
   }
   _warnWebFallback('ChatGPT');
+  _assertRawKey('ChatGPT', keys.openai);
   const r = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + keys.openai },
@@ -180,6 +194,7 @@ async function _callGemini(prompt, { signal } = {}) {
     return r.text || '';
   }
   _warnWebFallback('Gemini');
+  _assertRawKey('Gemini', geminiKey);
   const r = await fetchWithTimeout('https://generativelanguage.googleapis.com/v1beta/models/' + CONFIG.DEFAULT_GEMINI_MODEL + ':generateContent?key=' + geminiKey, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ contents: [{ parts: [{ text: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS) }] }], generationConfig: { maxOutputTokens: CONFIG.MAX_OUTPUT_TOKENS } }),
@@ -211,6 +226,7 @@ async function _callClaude(prompt, { signal } = {}) {
     return r.text || '';
   }
   _warnWebFallback('Claude');
+  _assertRawKey('Claude', keys.claude);
   const r = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-api-key': keys.claude, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
@@ -261,6 +277,7 @@ async function _callGeminiPro(prompt, { signal } = {}) {
     return r.text || '';
   }
   _warnWebFallback('Gemini');
+  _assertRawKey('Gemini', gKey);
   const r = await fetchWithTimeout('https://generativelanguage.googleapis.com/v1beta/models/' + CONFIG.DEFAULT_GEMINI_MODEL + ':generateContent?key=' + gKey, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ contents: [{ parts: [{ text: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS_PRO) }] }], generationConfig: { maxOutputTokens: CONFIG.MAX_OUTPUT_TOKENS } }),
@@ -298,6 +315,7 @@ export async function callGeminiVideo(videoId, prompt, { signal } = {}) {
     return r.text || '';
   }
   _warnWebFallback('Gemini Video');
+  _assertRawKey('Gemini Video', gaiKey);
   const r = await fetchWithTimeout('https://generativelanguage.googleapis.com/v1beta/models/' + videoModel + ':generateContent?key=' + gaiKey, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ contents: [{ parts: [{ fileData: { fileUri: 'https://www.youtube.com/watch?v=' + videoId, mimeType: 'video/*' } }, { text: prompt }] }], generationConfig: { maxOutputTokens: CONFIG.MAX_OUTPUT_TOKENS_SHORT } }),
@@ -384,6 +402,7 @@ export async function callGeminiVideoStream(videoId, prompt, { onChunk, onDone, 
     const _vk = getApiKeys();
     const _gk = getGeminiKey(_vk);
     if (!_gk) throw new Error('Google AI Studio API 키를 설정해주세요.');
+    _assertRawKey('Gemini Video Stream', _gk);
     const _vm0 = _vk.geminiVideoModel || CONFIG.DEFAULT_GEMINI_MODEL;
     const _vm = (_vm0 === 'gemini-2.0-flash' || _vm0 === 'gemini-2.0-flash-001' || _vm0 === 'gemini-2.5-flash') ? 'gemini-2.5-pro' : _vm0;
     const _url = 'https://generativelanguage.googleapis.com/v1beta/models/' + _vm + ':generateContent?key=' + _gk;
@@ -435,6 +454,7 @@ export async function callPerplexity(prompt, { signal } = {}) {
     return r.text || '';
   }
   _warnWebFallback('Perplexity');
+  _assertRawKey('Perplexity', keys.perplexity);
   const r = await fetchWithTimeout('https://api.perplexity.ai/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + keys.perplexity },
@@ -616,6 +636,7 @@ export async function callLLMStream(prompt, { onChunk, onDone, onError, signal }
     const keys = getApiKeys();
     try {
       if (provider === 'claude' && keys.claude) {
+        _assertRawKey('Claude Stream', keys.claude);
         const claudeModel = keys.claudeModel || CONFIG.DEFAULT_CLAUDE_MODEL;
         const resp = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
@@ -651,6 +672,7 @@ export async function callLLMStream(prompt, { onChunk, onDone, onError, signal }
       }
       if (provider === 'gemini' && hasGeminiKey(keys)) {
         const geminiKey = getGeminiKey(keys);
+        _assertRawKey('Gemini Stream', geminiKey);
         const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + CONFIG.DEFAULT_GEMINI_MODEL + ':streamGenerateContent?alt=sse&key=' + geminiKey, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contents: [{ parts: [{ text: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS) }] }], generationConfig: { maxOutputTokens: CONFIG.MAX_OUTPUT_TOKENS } }),

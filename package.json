@@ -1,6 +1,6 @@
 {
   "name": "issue-youtube-tool",
-  "version": "3.6.1",
+  "version": "3.6.2",
   "description": "유튜브도사 영상 제작 솔루션 — 체인저스캠퍼스",
   "main": "main.js",
   "scripts": {

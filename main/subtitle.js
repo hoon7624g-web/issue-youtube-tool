@@ -222,7 +222,15 @@ function slowExtract(videoId, hardenChildWindow) {
       width: 1280, height: 720, show: false,
       webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, partition: 'subtitle-' + videoId + '-' + Date.now() }
     });
-    hardenChildWindow(hidden, ['https://www.youtube.com', 'https://youtube.com', 'https://accounts.google.com']);
+    // ★ v3.6.2 P2-3: 빠른 httpsGet 경로의 allowlist와 일치시킴.
+    //   EU/UK 사용자가 consent.youtube.com / consent.google.com으로 리다이렉트되어도
+    //   hidden window에서 정상 처리되도록 함. (이전: youtube.com / accounts.google.com만 허용 → consent 흐름에서 차단됨)
+    hardenChildWindow(hidden, [
+      'https://www.youtube.com', 'https://youtube.com', 'https://youtu.be',
+      'https://video.google.com', 'https://www.google.com',
+      'https://accounts.google.com',
+      'https://consent.youtube.com', 'https://consent.google.com'
+    ]);
     hidden.webContents.setAudioMuted(true);
 
     let captionCaptured = false;
