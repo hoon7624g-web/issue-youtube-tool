@@ -3,6 +3,11 @@
   "version": "3.6.2",
   "description": "유튜브도사 영상 제작 솔루션 — 체인저스캠퍼스",
   "main": "main.js",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
   "scripts": {
     "dev:vite": "vite --config vite.config.js",
     "dev:electron": "cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .",
@@ -42,7 +47,6 @@
       "preload.js",
       "shared-config.json",
       "dist/**/*",
-      "admin-shared/**/*",
       "api-key-guide/**/*",
       "build/**/*",
       "remotion/**/*",
