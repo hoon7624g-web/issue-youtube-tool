@@ -13,6 +13,12 @@ const SESSION_FILE = path.join(app.getPath('userData'), '.session.enc');
 const ALLOWED_API_KEYS = ['youtube','claude','gemini','openai','tts','elevenlabs','pexels','googleAiStudio','perplexity','llmProvider','geminiVideoModel','claudeModel'];
 const ALLOWED_SESSION_KEYS = ['access_token','refresh_token','user','expires_at'];
 
+// ★ v3.6.2 P0-1: 비밀 키와 비-비밀(설정) 키 분리
+// SECRET_KEYS는 렌더러로 절대 보내지 않고, 존재 여부(bool)만 노출한다.
+// NON_SECRET_KEYS는 폼 렌더링/모델 선택에 필요하므로 값 그대로 노출 가능.
+const SECRET_KEYS = ['youtube','claude','gemini','openai','tts','elevenlabs','pexels','googleAiStudio','perplexity'];
+const NON_SECRET_KEYS = ['llmProvider','geminiVideoModel','claudeModel'];
+
 // ── 메모리 캐시 (파이프라인 중 수십 번의 디스크 I/O 방지) ──
 let _keyCache = null;
 
@@ -54,24 +60,71 @@ function writeEncryptedKeys(keys) {
   }
 }
 
+// ★ v3.6.2 P0-1: 키 상태 스냅샷 — 비밀 키는 bool로만, 설정 키는 값 그대로
+// 렌더러는 어떤 경우에도 비밀 키 문자열에 접근하지 못한다.
+function buildKeyStatusSnapshot(keys) {
+  const src = keys || readEncryptedKeys() || {};
+  const snap = {};
+  for (const k of SECRET_KEYS) {
+    const v = src[k];
+    snap[k] = !!(typeof v === 'string' && v.trim());
+  }
+  for (const k of NON_SECRET_KEYS) {
+    if (typeof src[k] === 'string' && src[k]) snap[k] = src[k];
+  }
+  // 기본값 보강 (렌더러 폼 렌더링용)
+  if (!snap.llmProvider) snap.llmProvider = 'claude';
+  if (!snap.geminiVideoModel) snap.geminiVideoModel = 'gemini-2.5-pro';
+  if (!snap.claudeModel) snap.claudeModel = 'claude-sonnet-4-20250514';
+  return snap;
+}
+
 // ── IPC 핸들러 등록 ──
 function registerKeyIPC(ipcMain, assertTrustedSender) {
-  ipcMain.handle('get-api-keys', (event) => {
+  // ★ v3.6.2 P0-1: 신규 권장 채널 — 키 상태(bool/모델 선택)만 반환, 비밀 키 문자열 미노출
+  ipcMain.handle('get-api-key-status', (event) => {
     assertTrustedSender(event);
-    return readEncryptedKeys();
+    return buildKeyStatusSnapshot();
   });
 
+  // ★ v3.6.2 P0-1: 레거시 채널 — 동일하게 status snapshot만 반환 (raw key 절대 미반환)
+  // 호환성을 위해 채널은 유지하되 응답은 status로 강제. v3.7에서 제거 예정.
+  ipcMain.handle('get-api-keys', (event) => {
+    assertTrustedSender(event);
+    log.warn('[Keys] DEPRECATED: get-api-keys 채널 호출됨 — get-api-key-status로 전환 필요');
+    return buildKeyStatusSnapshot();
+  });
+
+  // ★ v3.6.2 P0-1: set-api-keys는 이제 MERGE 동작
+  // 렌더러는 변경된 필드만 보내고, 빈 문자열/누락 필드는 기존 값을 유지한다.
+  // 이로써 폼이 saved-key의 평문을 보유하지 않아도 부분 갱신이 가능해진다.
   ipcMain.handle('set-api-keys', (event, keys) => {
     assertTrustedSender(event);
     if (!keys || typeof keys !== 'object' || Array.isArray(keys)) return false;
-    const sanitized = {};
-    for (const k of ALLOWED_API_KEYS) {
+    const current = readEncryptedKeys();
+    const merged = Object.assign({}, current);
+    // 비밀 키: 비어있지 않은 새 값만 갱신, 빈 값은 기존 유지 (의도적 삭제는 별도 채널)
+    for (const k of SECRET_KEYS) {
       if (typeof keys[k] === 'string') {
         const value = keys[k].trim();
-        if (value) sanitized[k] = value;
+        if (value) merged[k] = value;
       }
     }
-    return writeEncryptedKeys(sanitized);
+    // 설정 키(llmProvider/모델): 빈 값도 유효 갱신으로 인정 (사용자가 명시적으로 보냄)
+    for (const k of NON_SECRET_KEYS) {
+      if (typeof keys[k] === 'string') merged[k] = keys[k];
+    }
+    return writeEncryptedKeys(merged);
+  });
+
+  // ★ v3.6.2 P0-1: 개별 키 삭제 — 폼에서 특정 키만 제거하고 싶을 때 사용
+  ipcMain.handle('delete-api-key', (event, keyName) => {
+    assertTrustedSender(event);
+    if (typeof keyName !== 'string' || !SECRET_KEYS.includes(keyName)) return false;
+    const current = readEncryptedKeys();
+    if (!(keyName in current)) return true;
+    delete current[keyName];
+    return writeEncryptedKeys(current);
   });
 
   ipcMain.handle('clear-api-keys', (event) => {
@@ -238,7 +291,10 @@ function registerKeyIPC(ipcMain, assertTrustedSender) {
 module.exports = {
   readEncryptedKeys,
   writeEncryptedKeys,
+  buildKeyStatusSnapshot,
   ALLOWED_API_KEYS,
+  SECRET_KEYS,
+  NON_SECRET_KEYS,
   KEY_FILE,
   SESSION_FILE,
   registerKeyIPC,

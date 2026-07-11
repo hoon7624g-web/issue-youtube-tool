@@ -142,17 +142,28 @@ export function initSession() {
 }
 
 export function getSession() { return _sessionCache; }
+
+// ★ v3.6.2 P2-2: setSession 실패 알림 콜백 (UI에서 토스트 표시용)
+let _onSessionStorageFail = null;
+export function onSessionStorageFail(cb) { _onSessionStorageFail = cb; }
+
 export function setSession(s) {
   _sessionCache = s;
   if (window.electronAPI && window.electronAPI.setSession) {
+    // ★ v3.6.2 P2-2: Electron에서는 fail-closed (localStorage fallback 제거)
+    // safeStorage 불가 시 세션은 메모리에만 보관되고 앱 재시작 시 재로그인 필요.
+    // 이 정책은 SECURITY_MODEL.md의 v3.6.0 fail-closed 원칙과 일치한다.
     window.electronAPI.setSession(s).then(ok => {
       if (!ok) {
-        try { localStorage.setItem('yt_session', JSON.stringify(s)); } catch(e) {}
+        console.warn('[Session] safeStorage 저장 실패 — 메모리 전용 모드 (앱 종료 시 재로그인 필요)');
+        if (_onSessionStorageFail) _onSessionStorageFail();
       }
-    }).catch(() => {
-      try { localStorage.setItem('yt_session', JSON.stringify(s)); } catch(e) {}
+    }).catch((e) => {
+      console.warn('[Session] IPC 저장 실패:', e && e.message);
+      if (_onSessionStorageFail) _onSessionStorageFail();
     });
   } else {
+    // 웹 환경 (개발/테스트 전용 — localStorage 평문 저장)
     try { localStorage.setItem('yt_session', JSON.stringify(s)); } catch(e) {}
   }
 }
@@ -162,6 +173,7 @@ export function clearSession() {
   if (window.electronAPI && window.electronAPI.clearSession) {
     window.electronAPI.clearSession();
   }
+  // 레거시 yt_session 키 정리 (마이그레이션 잔재 + 웹 환경)
   try { localStorage.removeItem('yt_session'); } catch(e) {}
 }
 
@@ -169,51 +181,75 @@ export function getToken() { const s = getSession(); return s ? s.access_token :
 export function getUser() { const s = getSession(); return s ? s.user : null; }
 
 // ── API 키 관리 (safeStorage 암호화 + 메모리 캐시) ──
+// ★ v3.6.2 P0-1: Electron에서는 비밀 키 문자열이 _keyCache에 절대 들어가지 않는다.
+//   - Electron: _keyCache = { youtube: true, claude: true, llmProvider: 'claude', ... }
+//   - 웹(개발): _keyCache = { youtube: 'AIza...', claude: 'sk-ant-...', ... } (기존 동작)
 let _keyCache = null;
 let _keyCacheReady = false;
 
+// ★ v3.6.2 P0-1: 환경 분기 — 렌더러 키 보유 여부 판정에 사용
+function _isElectronStrict() {
+  return !!(window.electronAPI && window.electronAPI.getApiKeyStatus);
+}
+
 export function initApiKeys() {
-  if (window.electronAPI && window.electronAPI.getApiKeys) {
-    return window.electronAPI.getApiKeys().then(keys => {
-      if (keys && Object.keys(keys).length > 0) { _keyCache = keys; _keyCacheReady = true; return keys; }
-      // 레거시 마이그레이션 (safeStorage 저장 성공 시에만 채택)
+  if (_isElectronStrict()) {
+    // Electron: 비밀 키 문자열 미수신 — 상태(bool)만 받는다
+    return window.electronAPI.getApiKeyStatus().then(status => {
+      const hasAny = status && Object.keys(status).some(k => status[k] === true);
+      if (hasAny) {
+        _keyCache = status;
+        _keyCacheReady = true;
+        return status;
+      }
+      // 레거시 마이그레이션 (localStorage → safeStorage)
       try {
         const legacy = JSON.parse(localStorage.getItem('yt_api_keys'));
         if (legacy && Object.keys(legacy).length > 0) {
           return window.electronAPI.migrateApiKeys(legacy).then(ok => {
             if (ok) {
               localStorage.removeItem('yt_api_keys');
-              // ★ P2-fix: main에서 sanitize된 키를 재로드 (raw legacy와의 불일치 방지)
-              return window.electronAPI.getApiKeys().then(sanitized => {
-                _keyCache = sanitized && Object.keys(sanitized).length > 0 ? sanitized : legacy;
+              return window.electronAPI.getApiKeyStatus().then(s => {
+                _keyCache = s || status || {};
                 _keyCacheReady = true;
                 return _keyCache;
               }).catch(() => {
-                _keyCache = legacy;
+                _keyCache = status || {};
                 _keyCacheReady = true;
-                return legacy;
+                return _keyCache;
               });
             }
+            _keyCache = status || {};
             _keyCacheReady = true;
-            return {};
+            return _keyCache;
           });
         }
       } catch(e) {}
+      _keyCache = status || {};
       _keyCacheReady = true;
-      return {};
-    }).catch(() => { _keyCacheReady = true; return {}; });
+      return _keyCache;
+    }).catch(() => { _keyCacheReady = true; _keyCache = {}; return {}; });
   }
-  // 웹 환경
+  // 웹 환경 (개발/테스트 전용 — 평문 키 보관)
   try { const k = JSON.parse(localStorage.getItem('yt_api_keys')); if (k) { _keyCache = k; } } catch(e) {}
   _keyCacheReady = true;
   return Promise.resolve(_keyCache || {});
 }
 
 export function getApiKeys() {
-  if (!_keyCacheReady && !(window.electronAPI && window.electronAPI.isElectron)) {
+  if (!_keyCacheReady && !_isElectronStrict()) {
     try { const k = JSON.parse(localStorage.getItem('yt_api_keys')); if (k) _keyCache = k; } catch(e) {}
   }
   return _keyCache || {};
+}
+
+// ★ v3.6.2 P0-1: 저장된 키가 있는지 환경 무관하게 판정
+//   Electron: keys[k] === true
+//   웹:       typeof keys[k] === 'string' && keys[k].trim()
+export function isKeySaved(keyName) {
+  const k = getApiKeys();
+  const v = k[keyName];
+  return v === true || (typeof v === 'string' && !!v.trim());
 }
 
 // ★ P1-fix: import 후 렌더러 캐시 강제 재로드
@@ -223,17 +259,24 @@ export async function reloadApiKeys() {
   return await initApiKeys();
 }
 
+// ★ v3.6.2 P0-1: setApiKeys는 변경된 필드만 보내면 된다 (main이 merge)
+//   Electron: 빈 필드는 미전송 → main이 기존 값 유지
+//   웹:        전체 객체를 localStorage에 그대로 저장
 export function setApiKeys(keys) {
-  if (window.electronAPI && window.electronAPI.setApiKeys) {
+  if (_isElectronStrict()) {
     return window.electronAPI.setApiKeys(keys).then(ok => {
       if (!ok) {
         console.warn('[Keys] safeStorage 저장 실패 — 저장 중단');
         return { ok: false, method: 'safeStorage_unavailable', error: 'OS 보안 저장소를 사용할 수 없어 API 키를 저장할 수 없습니다.' };
       }
-      _keyCache = keys;
-      return { ok: true, method: 'safeStorage' };
+      // ★ 저장 후 캐시는 status snapshot으로 재로드 (평문 보관 금지)
+      return window.electronAPI.getApiKeyStatus().then(status => {
+        _keyCache = status || {};
+        _keyCacheReady = true;
+        return { ok: true, method: 'safeStorage' };
+      }).catch(() => ({ ok: true, method: 'safeStorage' }));
     }).catch(e => {
-      console.warn('[Keys] IPC 저장 실패:', e.message);
+      console.warn('[Keys] IPC 저장 실패:', e && e.message);
       return { ok: false, method: 'ipc_error', error: 'API 키 저장 중 오류가 발생했습니다. 앱을 다시 실행해주세요.' };
     });
   }
@@ -243,9 +286,8 @@ export function setApiKeys(keys) {
 }
 
 export function hasApiKeys() {
-  const k = getApiKeys();
-  const hasLlm = !!(k.claude || k.gemini || k.openai);
-  return !!(k.youtube && hasLlm);
+  const hasLlm = isKeySaved('claude') || isKeySaved('gemini') || isKeySaved('openai');
+  return isKeySaved('youtube') && hasLlm;
 }
 
 export function cfg() {

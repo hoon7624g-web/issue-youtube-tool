@@ -8,7 +8,6 @@ export { createClient };
 // ── CORS: 허용된 Origin만 ──
 const ALLOWED_ORIGINS = [
   "https://issue-youtube-tool.vercel.app",
-  "https://issue-youtube-tool-shyun-creates-projects.vercel.app",  // 어드민 (Vercel 프로젝트 URL)
   "null",  // Electron file:// — 3-6: 장기적으로 제거 목표. 현재는 X-App-Client 헤더로 추가 검증.
   "http://localhost:5173",  // Vite dev server (개발 모드)
   "https://youtube-dosa-web-v3-6-0.vercel.app",  // 웹 테스트 버전
@@ -52,6 +51,14 @@ export function getClientIp(req: Request): string {
   const xff = req.headers.get("x-forwarded-for");
   if (xff) return xff.split(",")[0].trim();
   return "unknown";
+}
+
+// ★ v3.6.2 P1-1: 이메일 등 식별자 해시 (계정 단위 brute-force 방어용)
+//   usage_logs에 평문 이메일을 남기지 않기 위해 SHA-256 hex로 변환.
+export async function sha256Hex(input: string): Promise<string> {
+  const bytes = new TextEncoder().encode(input);
+  const hash = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 // ── 응답 헬퍼 ──

@@ -5,7 +5,7 @@
 // 배포: supabase functions deploy proxy --no-verify-jwt
 // ═══════════════════════════════════════════════════════════
 
-import { getCorsHeaders, json, getServiceClient, validateUser, checkRate, logUsage, notifySlack, getClientIp } from "./utils.ts";
+import { getCorsHeaders, json, getServiceClient, validateUser, checkRate, logUsage, notifySlack, getClientIp, sha256Hex } from "./utils.ts";
 import { handleSignup, handleLogin, handleRefresh } from "./auth.ts";
 import { handleAdmin } from "./admin.ts";
 import { handleYouTube } from "./youtube.ts";
@@ -45,16 +45,48 @@ Deno.serve(async (req) => {
   }
   if (path === "/auth/login" && req.method === "POST") {
     const ip = getClientIp(req);
+    // ★ v3.6.2 P1-1: 계정 단위 brute-force 방어 추가
+    //   - IP 단위 (기존): 같은 IP에서 5분 내 10회 실패 → 차단
+    //   - 계정 단위 (신규): 같은 이메일에 대해 IP 무관 5분 내 10회 실패 → 차단
+    //   - 실패만 카운트 (status >= 400) — 정상 사용자가 비번 한 번 틀려도 잠기지 않음
+    let accountKey = "";
+    try {
+      const body = await req.clone().json();
+      const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+      if (email) accountKey = await sha256Hex(email);
+    } catch (_) { /* body 파싱 실패는 handleLogin에서 처리 */ }
+
     const since = new Date(Date.now() - 300000).toISOString();
-    const { count } = await svc.from("usage_logs").select("*", { count: "exact", head: true })
-      .eq("endpoint", "login").eq("user_id", ip).gte("created_at", since);
-    if ((count || 0) >= 10) {
-      notifySlack("login", 429, `Brute force 의심: IP ${ip}, ${count}회 시도`, ip);
+    const { count: ipFailCount } = await svc.from("usage_logs")
+      .select("*", { count: "exact", head: true })
+      .eq("endpoint", "login").eq("user_id", ip)
+      .gte("status_code", 400)
+      .gte("created_at", since);
+    let accountFailCount = 0;
+    if (accountKey) {
+      const { count } = await svc.from("usage_logs")
+        .select("*", { count: "exact", head: true })
+        .eq("endpoint", "login-account").eq("user_id", accountKey)
+        .gte("status_code", 400)
+        .gte("created_at", since);
+      accountFailCount = count || 0;
+    }
+    if ((ipFailCount || 0) >= 10 || accountFailCount >= 10) {
+      notifySlack("login", 429,
+        `Brute force 의심: IP_FAIL=${ipFailCount || 0}, ACCOUNT_FAIL=${accountFailCount}, hash=${accountKey.slice(0, 12)}...`,
+        ip);
       return json(cors, { error: "로그인 시도가 너무 많습니다. 5분 후 다시 시도하세요." }, 429);
     }
     const t0 = Date.now();
     const resp = await handleLogin(cors, req, svc);
-    await svc.from("usage_logs").insert({ user_id: ip, endpoint: "login", status_code: resp.status, response_ms: Date.now() - t0 });
+    // ★ v3.6.2 P1-1: IP 로그 + 계정 로그 동시 적재 (계정 식별자가 있는 경우)
+    const logRows: Array<Record<string, unknown>> = [
+      { user_id: ip, endpoint: "login", status_code: resp.status, response_ms: Date.now() - t0 }
+    ];
+    if (accountKey) {
+      logRows.push({ user_id: accountKey, endpoint: "login-account", status_code: resp.status, response_ms: Date.now() - t0 });
+    }
+    await svc.from("usage_logs").insert(logRows);
     return resp;
   }
   if (path === "/auth/refresh" && req.method === "POST") {

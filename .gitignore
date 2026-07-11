@@ -1,13 +1,17 @@
+# 의존성
 node_modules/
-dist/
 
+# 빌드 산출물
+dist/
 *.exe
 *.dmg
 *.AppImage
+
+# 환경변수 / 시크릿
 .env
 
+# Supabase 로컬 임시 파일
 supabase/.temp/
 
-supabase/.temp/
-
-supabase/.temp/
+# OS
+.DS_Store

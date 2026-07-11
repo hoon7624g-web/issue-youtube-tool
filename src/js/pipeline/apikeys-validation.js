@@ -2,9 +2,10 @@
 // pipeline/apikeys-validation.js — API 키 연결 테스트
 // v3.6.0 — Electron: Main Process IPC 경유 (렌더러 키 미노출)
 //           웹(개발): 직접 fetch (개발/테스트 전용)
+// v3.6.2 — P0-1: 폼 입력이 비고 저장된 키가 있으면 testApiKey(provider)로 저장된 키 테스트
 // ═══════════════════════════════════════
 import { $ , el } from '../utils.js';
-import { fetchWithTimeout } from '../../client-proxy-auth.js';
+import { fetchWithTimeout, isKeySaved } from '../../client-proxy-auth.js';
 
 const _isElectron = !!(window.electronAPI && window.electronAPI.testApiKeyDirect);
 
@@ -116,8 +117,11 @@ export { _isElectron as isElectronEnv };
 
 async function _runTest(provider, key) {
   if (_isElectron) {
-    // Electron: 키를 IPC로 Main Process에 전달하여 테스트
-    // ※ 키는 IPC 채널을 통해서만 이동하며 렌더러 fetch를 사용하지 않음
+    // ★ v3.6.2 P0-1: 폼 입력이 비어있으면 저장된 키로 테스트 (렌더러는 saved 여부만 알고 값은 모름)
+    if (!key && window.electronAPI && window.electronAPI.testApiKey) {
+      return window.electronAPI.testApiKey(provider);
+    }
+    // 사용자가 새 키를 입력한 경우 — 저장 전 검증 (키는 IPC 인자로만 전달)
     return window.electronAPI.testApiKeyDirect(provider, key);
   }
   // 웹(개발/테스트): 렌더러에서 직접 호출
@@ -149,19 +153,22 @@ export async function validateAllKeys() {
   if ($('llmGemini') && $('llmGemini').classList.contains('on')) llmProvider = 'gemini';
   if ($('llmChatgpt') && $('llmChatgpt').classList.contains('on')) llmProvider = 'chatgpt';
 
+  // ★ v3.6.2 P0-1: saved 키도 검증 대상에 포함 (입력이 비어있어도 저장됐으면 main의 stored key로 테스트)
+  // resolveProvKey: 입력값 우선, 없으면 빈 문자열 (→ _runTest가 testApiKey(provider)로 자동 전환)
+  const useStored = (provName) => isKeySaved(provName);
   const tests = [
-    { label: 'YouTube', provider: 'youtube', key: yt.trim(), required: true },
+    { label: 'YouTube', provider: 'youtube', key: yt.trim(), required: true, hasSaved: useStored('youtube') },
   ];
-  if (llmProvider === 'claude') tests.push({ label: 'Claude', provider: 'claude', key: claude.trim(), required: true });
-  else if (llmProvider === 'gemini') tests.push({ label: 'Gemini', provider: 'gemini', key: gemini.trim(), required: true });
-  else if (llmProvider === 'chatgpt') tests.push({ label: 'ChatGPT', provider: 'openai', key: openai.trim(), required: true });
-  if (llmProvider !== 'gemini' && gaiStudio.trim()) {
-    tests.push({ label: 'Google AI (영상 분석)', provider: 'gemini', key: gaiStudio.trim(), required: true });
+  if (llmProvider === 'claude') tests.push({ label: 'Claude', provider: 'claude', key: claude.trim(), required: true, hasSaved: useStored('claude') });
+  else if (llmProvider === 'gemini') tests.push({ label: 'Gemini', provider: 'gemini', key: gemini.trim(), required: true, hasSaved: useStored('gemini') });
+  else if (llmProvider === 'chatgpt') tests.push({ label: 'ChatGPT', provider: 'openai', key: openai.trim(), required: true, hasSaved: useStored('openai') });
+  if (llmProvider !== 'gemini' && (gaiStudio.trim() || useStored('googleAiStudio'))) {
+    tests.push({ label: 'Google AI (영상 분석)', provider: 'googleAiStudio', key: gaiStudio.trim(), required: true, hasSaved: useStored('googleAiStudio') });
   }
-  if (tts.trim()) tests.push({ label: 'Google TTS', provider: 'tts', key: tts.trim(), required: false });
-  if (el11.trim()) tests.push({ label: 'ElevenLabs', provider: 'elevenlabs', key: el11.trim(), required: false });
-  if (pexels.trim()) tests.push({ label: 'Pexels', provider: 'pexels', key: pexels.trim(), required: false });
-  if (perplexity.trim()) tests.push({ label: 'Perplexity', provider: 'perplexity', key: perplexity.trim(), required: false });
+  if (tts.trim() || useStored('tts')) tests.push({ label: 'Google TTS', provider: 'tts', key: tts.trim(), required: false, hasSaved: useStored('tts') });
+  if (el11.trim() || useStored('elevenlabs')) tests.push({ label: 'ElevenLabs', provider: 'elevenlabs', key: el11.trim(), required: false, hasSaved: useStored('elevenlabs') });
+  if (pexels.trim() || useStored('pexels')) tests.push({ label: 'Pexels', provider: 'pexels', key: pexels.trim(), required: false, hasSaved: useStored('pexels') });
+  if (perplexity.trim() || useStored('perplexity')) tests.push({ label: 'Perplexity', provider: 'perplexity', key: perplexity.trim(), required: false, hasSaved: useStored('perplexity') });
 
   btn.disabled = true;
   btn.textContent = '\u23F3 테스트 중...';

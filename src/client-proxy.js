@@ -7,7 +7,8 @@ export {
   // auth
   initSession, getSession, setSession, clearSession,
   getToken, getUser,
-  initApiKeys, getApiKeys, setApiKeys, hasApiKeys, reloadApiKeys,
+  initApiKeys, getApiKeys, setApiKeys, hasApiKeys, reloadApiKeys, isKeySaved,
+  onSessionStorageFail,
   cfg, hasKey, hasYtKey,
   proxyFetch, clearRefreshInterval,
   authLogin, authSignup,

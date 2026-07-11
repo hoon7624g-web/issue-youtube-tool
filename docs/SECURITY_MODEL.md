@@ -1,4 +1,4 @@
-# 보안 모델 & API 호출 경로 (v3.5.5)
+# 보안 모델 & API 호출 경로 (v3.6.2)
 
 ## 개요
 
@@ -75,13 +75,25 @@
 
 ## 키 저장 방식
 
-| 환경 | 저장소 | 보호 수준 | UI 표시 |
-|------|--------|----------|---------|
-| Electron (safeStorage 가용) | OS 키체인/DPAPI | ✅ 암호화 | 🔒 OS 보안 저장소 |
-| Electron (safeStorage 불가) | 저장 차단 (fail-closed) | ✅ 키 미저장 | ⚠ 저장 불가 안내 |
-| 웹 | localStorage | ⚠️ 평문 | ⚠ 브라우저 로컬 저장소 |
+| 환경 | API 키 저장소 | 세션(JWT) 저장소 | 보호 수준 | UI 표시 |
+|------|--------|--------|----------|---------|
+| Electron (safeStorage 가용) | OS 키체인/DPAPI | OS 키체인/DPAPI | ✅ 암호화 | 🔒 OS 보안 저장소 |
+| Electron (safeStorage 불가) | 저장 차단 (fail-closed) | 메모리 전용 (fail-closed) | ✅ 키/세션 미디스크저장 | ⚠ 저장 불가 안내 |
+| 웹 | localStorage | localStorage | ⚠️ 평문 (개발/테스트 전용) | ⚠ 브라우저 로컬 저장소 |
 
 > API 키 설정 화면에서 현재 저장 방식이 배지로 실시간 표시됩니다.
+> **v3.6.2부터 세션도 fail-closed 정책 적용** — safeStorage 불가 환경에서는 앱 재시작 시 재로그인 필요. 정책 일관성 우선.
+
+### 렌더러 키 보유 정책 (v3.6.2 P0-1)
+
+| 환경 | 렌더러 메모리에 보유하는 키 정보 |
+|------|------------------------------|
+| Electron | `bool` 플래그만 (`{youtube: true, claude: true, ...}`) + 모델 선택 string |
+| 웹 | 평문 키 문자열 (개발/테스트 전용 — 사용자 동의 모달 후 저장) |
+
+- API 키 설정 화면 input은 saved 상태일 때 value를 비우고 placeholder("저장됨 — 변경 시에만 다시 입력")로 안내
+- 키 변경 시 변경된 필드만 main에 전송, main이 기존 값과 merge하여 저장
+- DOM에 평문 키가 노출되는 경로 없음
 
 ## 보안 방어선 요약
 
@@ -89,17 +101,23 @@
 2. **XSS 방어**: innerHTML 전면 제거, esc() + DOM API 기반 렌더링
 3. **IPC 신뢰 경계**: assertTrustedSender() — file:// 앱 디렉토리만 허용
 4. **키 암호화**: safeStorage (OS 키체인) — Electron에서만 동작
-5. **클라이언트 쓰로틀링**: 분당 20회 API 호출 제한 (모든 환경)
-6. **서버 Rate Limit**: 인증/공개 엔드포인트 모두 적용 (위 표 참조)
-7. **Brute force 방어**: 로그인 10회/5분 초과 시 Slack 즉시 알림
-8. **인증 통제**: 오프라인 시 로그인 차단, mock 진입 불가
+5. **렌더러 키 격리** (v3.6.2~): Electron에서 비밀 키는 main 프로세스에만 존재, 렌더러는 bool 플래그만 보유
+6. **클라이언트 쓰로틀링**: 분당 20회 API 호출 제한 (모든 환경)
+7. **서버 Rate Limit**: 인증/공개 엔드포인트 모두 적용 (위 표 참조)
+8. **Brute force 방어**: IP 단위 + 계정 단위(v3.6.2~) 각각 5분 내 10회 실패 초과 시 차단 + Slack 즉시 알림
+9. **다운로드 리다이렉트 검증** (v3.6.2~): 정규화된 URL로 재귀 호출, 매 hop에서 host allowlist 재검증
+10. **인증 통제**: 오프라인 시 로그인 차단, mock 진입 불가
 
 ## 핵심 리스크
 
-- **XSS 1건 발생 시**: Electron에서는 모든 API 키가 IPC로 보호되어 렌더러 메모리에 키가 없음. 연결 테스트도 v3.5.5에서 IPC 전환 완료.
-- **웹 환경**: 모든 키가 브라우저에 노출되며, 서버 rate limit 우회 가능
+- **XSS 1건 발생 시** (v3.6.2~): Electron에서는 모든 비밀 API 키가 main 프로세스에만 존재하고 렌더러 메모리·DOM에 평문이 없음. 단, 렌더러는 IPC 채널을 통해 LLM/미디어 호출을 트리거할 수 있으므로 사용량 폭증·악성 프롬프트 주입은 가능 (rate limit으로 일부 완화)
+- **웹 환경**: 모든 키가 브라우저에 노출되며, 서버 rate limit 우회 가능. **운영 배포 권장하지 않음** (개발/테스트 전용)
 - **관측성 사각지대**: Electron IPC 경유 호출(YouTube/Pexels/LLM/TTS)은 서버 usage log에 남지 않음
-- **safeStorage 불가 시**: OS 키체인을 사용할 수 없는 환경에서는 API 키 저장이 차단됩니다 (fail-closed). v3.6.0 기준 Electron에서 safeStorage 불가 시 localStorage fallback을 하지 않으며, 저장 불가 에러를 사용자에게 표시합니다.
+- **safeStorage 불가 환경 (v3.6.2~)**:
+  - API 키: 저장 차단 (fail-closed). 사용자가 매 세션마다 키 입력 필요
+  - 세션: 메모리 전용 (fail-closed). 앱 재시작 시 재로그인 필요
+  - safeStorage 불가는 매우 드문 환경 (libsecret 미설치 Linux 등)
+- **`x-forwarded-for` 신뢰성**: `getClientIp()`가 `cf-connecting-ip` 없을 때 XFF 첫 값을 신뢰. Supabase ingress가 client supplied 헤더를 덮어쓴다는 가정 하에 안전. 실측 검증 권장
 
 ## 향후 개선 방향
 

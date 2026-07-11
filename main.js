@@ -104,7 +104,7 @@ app.whenReady().then(() => {
   if (app.isPackaged && process.platform === 'darwin') {
     const checkMacUpdate = async () => {
       const currentVer = app.getVersion();
-      const res = await httpsGet('https://api.github.com/repos/shyun-create/issue-youtube-tool/releases/latest', {
+      const res = await httpsGet('https://api.github.com/repos/hoon7624g-web/issue-youtube-tool/releases/latest', {
         'User-Agent': 'youtube-dosa-updater',
         'Accept': 'application/vnd.github.v3+json'
       }, 10000);
@@ -207,7 +207,7 @@ ipcMain.handle('install-update', (event) => { assertTrustedSender(event); if (au
 // macOS: 자동 업데이트 불가 → GitHub 릴리즈 페이지 열기
 ipcMain.handle('open-update-page', (event) => {
   assertTrustedSender(event);
-  const url = updateStatus.macDownloadUrl || 'https://github.com/shyun-create/issue-youtube-tool/releases/latest';
+  const url = updateStatus.macDownloadUrl || 'https://github.com/hoon7624g-web/issue-youtube-tool/releases/latest';
   shell.openExternal(url);
   return { ok: true };
 });

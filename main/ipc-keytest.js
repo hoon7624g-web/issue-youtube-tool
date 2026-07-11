@@ -90,6 +90,8 @@ const TEST_MAP = {
   youtube: _testYouTube,
   claude: _testClaude,
   gemini: _testGemini,
+  // ★ v3.6.2 P0-1: googleAiStudio는 별도 키로 저장되지만 검증은 동일한 Gemini API 사용
+  googleAiStudio: _testGemini,
   openai: _testOpenAI,
   elevenlabs: _testElevenLabs,
   pexels: _testPexels,

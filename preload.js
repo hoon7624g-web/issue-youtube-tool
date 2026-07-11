@@ -54,9 +54,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openApiGuide: () => ipcRenderer.invoke('open-api-guide'),
   openPerplexity: (query) => ipcRenderer.invoke('open-perplexity', query),
 
-  // API 키 암호화 저장 (safeStorage)
-  getApiKeys: () => ipcRenderer.invoke('get-api-keys'),
+  // ★ v3.6.2 P0-1: API 키 상태 조회 — 비밀 키는 bool/모델은 string 으로만 반환
+  // 렌더러는 getApiKeyStatus만 사용. getApiKeys는 호환을 위해 유지하지만 동일하게 status snapshot 반환.
+  getApiKeyStatus: () => ipcRenderer.invoke('get-api-key-status'),
+  getApiKeys: () => ipcRenderer.invoke('get-api-keys'), // DEPRECATED — v3.7에서 제거 예정
   setApiKeys: (keys) => ipcRenderer.invoke('set-api-keys', keys),
+  deleteApiKey: (keyName) => ipcRenderer.invoke('delete-api-key', keyName),
   clearApiKeys: () => ipcRenderer.invoke('clear-api-keys'),
   migrateApiKeys: (legacyKeys) => ipcRenderer.invoke('migrate-api-keys', legacyKeys),
   setSessionOnlyMode: (enabled) => ipcRenderer.invoke('set-session-only-mode', enabled),
@@ -70,7 +73,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getStorageStatus: () => ipcRenderer.invoke('get-storage-status'),
 
   // API 키 내보내기/가져오기 (암호화 파일)
-  exportApiKeys: (password, rendererKeys) => ipcRenderer.invoke('export-api-keys', password, rendererKeys),
+  // ★ v3.6.2 P0-1: rendererKeys 인자 제거 — main이 자체 보관 키를 사용
+  exportApiKeys: (password) => ipcRenderer.invoke('export-api-keys', password),
   importApiKeys: (password) => ipcRenderer.invoke('import-api-keys', password),
 
   // API 키 연결 테스트 (Main Process에서 실행 — 렌더러 키 미노출)
