@@ -72,7 +72,7 @@ remotion/                 Remotion 영상/썸네일 컴포지션 (React)
 supabase/functions/proxy  Edge Function 프록시 — 인증 / rate limit / usage log
 admin-web/, admin-shared  관리자 대시보드
 api-key-guide/            API 키 발급 가이드
-scripts/                  lint / smoke / unit / e2e 테스트
+scripts/                  lint / smoke / unit / structure / check-version
 build/                    앱 아이콘 등 빌드 리소스
 docs/                     설계 · 핸드오프 · 보안 문서
 ```
@@ -82,8 +82,10 @@ docs/                     설계 · 핸드오프 · 보안 문서
 ## 개발 & 빌드
 
 ### 요구사항
-- Node.js 20+
+- Node.js 20.19+ 또는 22.12+ (`.nvmrc` 참고)
 - npm
+
+> ⚠️ 이 앱은 **승인된 계정 + 운영 Supabase 백엔드**가 있어야 실제 파이프라인을 사용할 수 있습니다. 저장소를 clone·빌드하는 것만으로는 로그인/기능이 동작하지 않습니다(백엔드·관리자는 별도 배포). API 키는 사용자가 로컬에 직접 보관합니다.
 
 ### 개발 모드
 ```bash
@@ -94,7 +96,7 @@ npm run dev:electron   # Electron 실행 (별도 터미널)
 
 ### 검증
 ```bash
-npm run verify         # lint + test(smoke+unit) + build 일괄 실행
+npm run verify         # check-version + lint + test(smoke+unit) + build 일괄 실행
 ```
 
 ### 프로덕션 빌드
