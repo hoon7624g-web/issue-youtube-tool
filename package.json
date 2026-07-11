@@ -23,6 +23,7 @@
     "coverage": "vitest run --coverage",
     "test": "node scripts/smoke-test.js && node scripts/unit-test.js",
     "test:structure": "node scripts/structure-test.js",
+    "test:e2e": "playwright test",
     "test:all": "node scripts/smoke-test.js && node scripts/unit-test.js && node scripts/structure-test.js && vitest run",
     "check-version": "node scripts/check-version.js",
     "verify": "npm run check-version && npm run lint && npm run format:check && npm run test && npm run test:vitest && npm run build",
@@ -102,6 +103,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.61.1",
     "@vitest/coverage-v8": "^4.1.10",
     "cross-env": "^7.0.3",
     "electron": "~33.0.0",
