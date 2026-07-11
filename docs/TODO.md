@@ -12,3 +12,8 @@
 4. 로그인 후 사이드바 렌더링
 5. 파이프라인 단계 이동 + 상태 저장/복원 무결성
 6. (가능하면) 결과 ZIP 패키징까지 스모크
+
+### esc() DOM 이스케이프 — 단위 테스트 미보유
+`esc()`는 `document.createElement('div').textContent → innerHTML` 방식이라 Node에서 실행 불가.
+`unit-test.js`는 실제 구현을 검증할 수 없어 esc 테스트를 제외했다(이전엔 regex mock으로 가짜 통과하던 구조). 진짜 검증은 jsdom 또는 Electron 렌더러에서 해야 한다.
+- ⚠️ 실제 esc는 텍스트 이스케이프(`& < >`)만 하고 `"`(따옴표)는 이스케이프하지 않는다(textContent 특성). 현재는 textContent/DOM 삽입에만 쓰여 안전하나, **HTML 속성 컨텍스트(`="${esc(x)}"`)에는 사용하지 말 것.**
