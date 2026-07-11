@@ -1,14 +1,10 @@
 // ═══════════════════════════════════════
-// e2e-test.js — 기본 E2E 테스트 (Playwright + Electron)
-// P2-21: 핵심 경로 최소 커버
-//   1. 앱 실행 → 로그인 화면 렌더링
-//   2. 로그인 폼 요소 확인
-//   3. API 키 설정 화면 진입 가능 여부
-//   4. 사이드바 렌더링 (로그인 후)
-//   5. 상태 저장/복원 무결성
+// structure-test.js — 정적 구조 회귀 검사 (런타임/Electron 미실행)
+// 소스 파일 존재·핵심 문자열 포함·HTML ID 등 정적 구조가
+// 회귀하지 않았는지만 검사한다. 실제 브라우저나 Electron 앱을 띄우지 않는다.
 //
-// 실행: npx playwright test scripts/e2e-test.js (Playwright 설치 필요)
-// 또는: node scripts/e2e-test.js (간이 모드 — Electron 직접 실행)
+// 실행: node scripts/structure-test.js
+// TODO: 진짜 런타임 E2E(Playwright + Electron)는 미구현 — docs/TODO.md 참조
 // ═══════════════════════════════════════
 const { execSync } = require('child_process');
 const fs = require('fs');
@@ -24,9 +20,9 @@ function assert(condition, msg) {
 }
 
 // ═══════════════════════════════════════
-// Part 1: 정적 구조 E2E 검증 (Electron 없이)
+// Part 1: 정적 구조 검증 (Electron 없이)
 // ═══════════════════════════════════════
-console.log('\n── 정적 구조 E2E 검증 ──');
+console.log('\n── 정적 구조 검증 ──');
 
 // 1. 빌드 가능 여부
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
@@ -123,7 +119,7 @@ assert(uiJs.includes('STEP_GROUPS'), 'ui.js: 사이드바 그룹핑 (P1-5)');
 assert(uiJs.includes('DeviceNotice'), 'ui.js: 기기 종속성 안내 (P2-17)');
 
 const kwJs = fs.readFileSync('src/js/pipeline/step2-keywords.js', 'utf8');
-assert(kwJs.includes('kw-collapsed'), 'step2: 키워드 접힘 (P1-6)');
+assert(kwJs.includes('kw-rank'), 'step2: 키워드 순위 표시 (P1-6)');
 
 // 11. P2 기술 부채 확인
 const configJs = fs.readFileSync('src/config.js', 'utf8');
@@ -159,7 +155,7 @@ assert(stateJs.includes("p[1] in NS_DEFAULTS[p[0]]"), 'sSet: NS_DEFAULTS 키 검
 // ═══════════════════════════════════════
 
 console.log('\n═══════════════════════════════════════');
-console.log('  E2E: ' + passed + ' passed, ' + failed + ' failed');
+console.log('  구조 검사: ' + passed + ' passed, ' + failed + ' failed');
 console.log('═══════════════════════════════════════');
 
 process.exit(failed > 0 ? 1 : 0);
