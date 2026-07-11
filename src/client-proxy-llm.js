@@ -411,7 +411,6 @@ export async function callGeminiVideoStream(videoId, prompt, { onChunk, onDone, 
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         if (attempt > 0) {
-          console.log('[Gemini Video] 재시도 ' + attempt + '/1 (3초 대기 후)');
           await new Promise(r => setTimeout(r, 3000));
         }
         const resp = await fetch(_url, {

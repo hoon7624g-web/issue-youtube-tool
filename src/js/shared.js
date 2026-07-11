@@ -35,12 +35,10 @@ export function prefetchSubtitle(videoId) {
   _subPrefetchVideoId = videoId;
 
   if (window.electronAPI && window.electronAPI.isElectron && window.electronAPI.getSubtitle) {
-    console.log('[SubPrefetch] 자막 프리페치 시작:', videoId);
     _subPrefetchPromise = window.electronAPI.getSubtitle(videoId).then(sub => {
       const text = sub.text || '';
       if (text && text.length > 30) {
         _subCache[videoId] = sub;
-        console.log('[SubPrefetch] 캐시 완료:', text.length + '자');
       }
       return sub;
     }).catch(e => {
@@ -53,12 +51,10 @@ export function prefetchSubtitle(videoId) {
 export async function getCachedSubtitle(videoId) {
   // 1순위: 캐시 히트
   if (_subCache[videoId]) {
-    console.log('[SubCache] 캐시 히트:', videoId);
     return _subCache[videoId];
   }
   // 2순위: 프리페치 진행 중이면 대기
   if (_subPrefetchVideoId === videoId && _subPrefetchPromise) {
-    console.log('[SubCache] 프리페치 대기 중...');
     const sub = await _subPrefetchPromise;
     return sub;
   }

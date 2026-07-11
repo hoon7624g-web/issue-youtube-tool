@@ -182,7 +182,6 @@ export const Api = {
       if (r.ok) {
         const d = await r.json();
         if (d.hotKeywords && d.hotKeywords.length > 0) {
-          if (d._stale) console.log('[IssueLink] 서버 만료 캐시 사용');
           return _store({ hotKeywords: d.hotKeywords, source: d.source || 'issuelink', posts: [] });
         }
       }
