@@ -6,7 +6,8 @@ import shared from '../shared-config.json';
 
 export const CONFIG = {
   // ── 서버 URL ──
-  PROXY_BASE: 'https://wotseowsskgobnusiacg.supabase.co/functions/v1/proxy',
+  // 빌드 시 VITE_PROXY_BASE 로 오버라이드 가능(.env 참고). 미설정 시 기본값 사용.
+  PROXY_BASE: import.meta.env.VITE_PROXY_BASE || 'https://wotseowsskgobnusiacg.supabase.co/functions/v1/proxy',
 
   // ── 공용 값 (shared-config.json — 기본값, 서버에서 동적 갱신 가능) ──
   DEFAULT_GEMINI_MODEL: shared.DEFAULT_GEMINI_MODEL,
