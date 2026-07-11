@@ -3,7 +3,7 @@ import { resolve } from 'path';
 
 export default defineConfig({
   root: 'src',
-  base: './',            // file:// 프로토콜 호환 (Electron)
+  base: './', // file:// 프로토콜 호환 (Electron)
   build: {
     outDir: '../dist',
     emptyOutDir: true,

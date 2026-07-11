@@ -10,14 +10,37 @@ const log = require('electron-log');
 const KEY_FILE = path.join(app.getPath('userData'), '.api-keys.enc');
 const SESSION_FILE = path.join(app.getPath('userData'), '.session.enc');
 
-const ALLOWED_API_KEYS = ['youtube','claude','gemini','openai','tts','elevenlabs','pexels','googleAiStudio','perplexity','llmProvider','geminiVideoModel','claudeModel'];
-const ALLOWED_SESSION_KEYS = ['access_token','refresh_token','user','expires_at'];
+const ALLOWED_API_KEYS = [
+  'youtube',
+  'claude',
+  'gemini',
+  'openai',
+  'tts',
+  'elevenlabs',
+  'pexels',
+  'googleAiStudio',
+  'perplexity',
+  'llmProvider',
+  'geminiVideoModel',
+  'claudeModel',
+];
+const ALLOWED_SESSION_KEYS = ['access_token', 'refresh_token', 'user', 'expires_at'];
 
 // ★ v3.6.2 P0-1: 비밀 키와 비-비밀(설정) 키 분리
 // SECRET_KEYS는 렌더러로 절대 보내지 않고, 존재 여부(bool)만 노출한다.
 // NON_SECRET_KEYS는 폼 렌더링/모델 선택에 필요하므로 값 그대로 노출 가능.
-const SECRET_KEYS = ['youtube','claude','gemini','openai','tts','elevenlabs','pexels','googleAiStudio','perplexity'];
-const NON_SECRET_KEYS = ['llmProvider','geminiVideoModel','claudeModel'];
+const SECRET_KEYS = [
+  'youtube',
+  'claude',
+  'gemini',
+  'openai',
+  'tts',
+  'elevenlabs',
+  'pexels',
+  'googleAiStudio',
+  'perplexity',
+];
+const NON_SECRET_KEYS = ['llmProvider', 'geminiVideoModel', 'claudeModel'];
 
 // ── 메모리 캐시 (파이프라인 중 수십 번의 디스크 I/O 방지) ──
 let _keyCache = null;
@@ -34,7 +57,7 @@ function readEncryptedKeys() {
     const json = safeStorage.decryptString(buf);
     _keyCache = JSON.parse(json);
     return JSON.parse(JSON.stringify(_keyCache));
-  } catch(e) {
+  } catch (e) {
     log.error('[Keys] Failed to read encrypted keys:', e.message);
     return {};
   }
@@ -53,7 +76,7 @@ function writeEncryptedKeys(keys) {
     fs.writeFileSync(KEY_FILE, encrypted);
     _keyCache = JSON.parse(JSON.stringify(keys)); // ★ Fix #3: deep copy로 캐시 변형 방지
     return true;
-  } catch(e) {
+  } catch (e) {
     log.error('[Keys] Failed to write encrypted keys:', e.message);
     _keyCache = null; // 실패 시에만 무효화
     return false;
@@ -130,7 +153,12 @@ function registerKeyIPC(ipcMain, assertTrustedSender) {
   ipcMain.handle('clear-api-keys', (event) => {
     assertTrustedSender(event);
     _keyCache = null;
-    try { if (fs.existsSync(KEY_FILE)) fs.unlinkSync(KEY_FILE); return true; } catch(e) { return false; }
+    try {
+      if (fs.existsSync(KEY_FILE)) fs.unlinkSync(KEY_FILE);
+      return true;
+    } catch (e) {
+      return false;
+    }
   });
 
   ipcMain.handle('migrate-api-keys', (event, legacyKeys) => {
@@ -157,7 +185,9 @@ function registerKeyIPC(ipcMain, assertTrustedSender) {
       if (!safeStorage.isEncryptionAvailable()) return null;
       const buf = fs.readFileSync(SESSION_FILE);
       return JSON.parse(safeStorage.decryptString(buf));
-    } catch(e) { return null; }
+    } catch (e) {
+      return null;
+    }
   });
 
   ipcMain.handle('set-session', (event, session) => {
@@ -174,12 +204,19 @@ function registerKeyIPC(ipcMain, assertTrustedSender) {
       if (!safeStorage.isEncryptionAvailable()) return false;
       fs.writeFileSync(SESSION_FILE, safeStorage.encryptString(json));
       return true;
-    } catch(e) { return false; }
+    } catch (e) {
+      return false;
+    }
   });
 
   ipcMain.handle('clear-session', (event) => {
     assertTrustedSender(event);
-    try { if (fs.existsSync(SESSION_FILE)) fs.unlinkSync(SESSION_FILE); return true; } catch(e) { return false; }
+    try {
+      if (fs.existsSync(SESSION_FILE)) fs.unlinkSync(SESSION_FILE);
+      return true;
+    } catch (e) {
+      return false;
+    }
   });
 
   // ── 실제 저장 방식 상태 조회 (safeStorage 가용 여부) ──
@@ -190,7 +227,7 @@ function registerKeyIPC(ipcMain, assertTrustedSender) {
     return {
       encrypted: available,
       hasKeys: hasKeys,
-      method: available ? 'safeStorage' : 'unsupported'
+      method: available ? 'safeStorage' : 'unsupported',
     };
   });
 
@@ -200,13 +237,18 @@ function registerKeyIPC(ipcMain, assertTrustedSender) {
     const { dialog } = require('electron');
     const crypto = require('crypto');
     try {
-      if (!password || typeof password !== 'string' || password.length < 4) return { ok: false, error: '비밀번호는 4자 이상이어야 합니다' };
+      if (!password || typeof password !== 'string' || password.length < 4)
+        return { ok: false, error: '비밀번호는 4자 이상이어야 합니다' };
 
       if (!safeStorage.isEncryptionAvailable()) {
-        return { ok: false, error: 'OS 보안 저장소를 사용할 수 없는 환경에서는 API 키 내보내기를 지원하지 않습니다' };
+        return {
+          ok: false,
+          error: 'OS 보안 저장소를 사용할 수 없는 환경에서는 API 키 내보내기를 지원하지 않습니다',
+        };
       }
       const keys = readEncryptedKeys();
-      if (!keys || Object.keys(keys).length === 0) return { ok: false, error: '저장된 API 키가 없습니다', noKeys: true };
+      if (!keys || Object.keys(keys).length === 0)
+        return { ok: false, error: '저장된 API 키가 없습니다', noKeys: true };
       // AES-256-GCM 암호화
       const salt = crypto.randomBytes(16);
       const key = crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256');
@@ -215,18 +257,27 @@ function registerKeyIPC(ipcMain, assertTrustedSender) {
       const json = JSON.stringify(keys);
       const encrypted = Buffer.concat([cipher.update(json, 'utf8'), cipher.final()]);
       const tag = cipher.getAuthTag();
-      const payload = { v: 1, s: salt.toString('base64'), i: iv.toString('base64'), t: tag.toString('base64'), d: encrypted.toString('base64') };
+      const payload = {
+        v: 1,
+        s: salt.toString('base64'),
+        i: iv.toString('base64'),
+        t: tag.toString('base64'),
+        d: encrypted.toString('base64'),
+      };
       // 파일 저장 다이얼로그
-      const { canceled, filePath } = await dialog.showSaveDialog(event.sender.getOwnerBrowserWindow(), {
-        title: 'API 키 내보내기',
-        defaultPath: 'youtube-dosa-keys.json',
-        filters: [{ name: 'JSON', extensions: ['json'] }]
-      });
+      const { canceled, filePath } = await dialog.showSaveDialog(
+        event.sender.getOwnerBrowserWindow(),
+        {
+          title: 'API 키 내보내기',
+          defaultPath: 'youtube-dosa-keys.json',
+          filters: [{ name: 'JSON', extensions: ['json'] }],
+        }
+      );
       if (canceled || !filePath) return { ok: false, error: '취소됨' };
       fs.writeFileSync(filePath, JSON.stringify(payload, null, 2));
       log.info('[Keys] Exported to:', filePath);
       return { ok: true };
-    } catch(e) {
+    } catch (e) {
       log.error('[Keys] Export failed:', e.message);
       return { ok: false, error: e.message };
     }
@@ -238,16 +289,21 @@ function registerKeyIPC(ipcMain, assertTrustedSender) {
     const { dialog } = require('electron');
     const crypto = require('crypto');
     try {
-      if (!password || typeof password !== 'string') return { ok: false, error: '비밀번호를 입력해주세요' };
-      const { canceled, filePaths } = await dialog.showOpenDialog(event.sender.getOwnerBrowserWindow(), {
-        title: 'API 키 가져오기',
-        filters: [{ name: 'JSON', extensions: ['json'] }],
-        properties: ['openFile']
-      });
+      if (!password || typeof password !== 'string')
+        return { ok: false, error: '비밀번호를 입력해주세요' };
+      const { canceled, filePaths } = await dialog.showOpenDialog(
+        event.sender.getOwnerBrowserWindow(),
+        {
+          title: 'API 키 가져오기',
+          filters: [{ name: 'JSON', extensions: ['json'] }],
+          properties: ['openFile'],
+        }
+      );
       if (canceled || !filePaths.length) return { ok: false, error: '취소됨' };
       const raw = fs.readFileSync(filePaths[0], 'utf8');
       const payload = JSON.parse(raw);
-      if (!payload || payload.v !== 1 || !payload.s || !payload.i || !payload.t || !payload.d) return { ok: false, error: '올바른 키 파일이 아닙니다' };
+      if (!payload || payload.v !== 1 || !payload.s || !payload.i || !payload.t || !payload.d)
+        return { ok: false, error: '올바른 키 파일이 아닙니다' };
       // AES-256-GCM 복호화
       const salt = Buffer.from(payload.s, 'base64');
       const iv = Buffer.from(payload.i, 'base64');
@@ -256,7 +312,9 @@ function registerKeyIPC(ipcMain, assertTrustedSender) {
       const key = crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256');
       const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
       decipher.setAuthTag(tag);
-      const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]).toString('utf8');
+      const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]).toString(
+        'utf8'
+      );
       const keys = JSON.parse(decrypted);
       // 유효성 검증 후 저장
       const sanitized = {};
@@ -266,7 +324,8 @@ function registerKeyIPC(ipcMain, assertTrustedSender) {
           if (value) sanitized[k] = value;
         }
       }
-      if (Object.keys(sanitized).length === 0) return { ok: false, error: '유효한 API 키가 없습니다' };
+      if (Object.keys(sanitized).length === 0)
+        return { ok: false, error: '유효한 API 키가 없습니다' };
 
       const saved = writeEncryptedKeys(sanitized);
       if (!saved) {
@@ -276,10 +335,16 @@ function registerKeyIPC(ipcMain, assertTrustedSender) {
 
       log.info('[Keys] Imported', Object.keys(sanitized).length, 'keys');
       return { ok: true, count: Object.keys(sanitized).length };
-    } catch(e) {
+    } catch (e) {
       // ★ P1-8: Node.js/OpenSSL 버전별 에러 메시지 차이 대응
       const msg = (e.message || '').toLowerCase();
-      if (msg.includes('unsupported state') || msg.includes('auth tag') || msg.includes('authenticate data') || msg.includes('decipher') || msg.includes('gcm')) {
+      if (
+        msg.includes('unsupported state') ||
+        msg.includes('auth tag') ||
+        msg.includes('authenticate data') ||
+        msg.includes('decipher') ||
+        msg.includes('gcm')
+      ) {
         return { ok: false, error: '비밀번호가 올바르지 않습니다' };
       }
       log.error('[Keys] Import failed:', e.message);

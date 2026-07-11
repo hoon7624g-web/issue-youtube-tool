@@ -9,15 +9,20 @@ const { httpsGet } = require('./http-helpers');
 
 async function _testYouTube(key) {
   if (!key) return { skip: true };
-  const r = await httpsGet('https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ&maxResults=1&key=' + key);
+  const r = await httpsGet(
+    'https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ&maxResults=1&key=' + key
+  );
   if (r.error) return { ok: false, msg: '네트워크 오류: ' + r.error };
   if (r.statusCode === 200) return { ok: true };
   if (r.statusCode === 403) {
     try {
       const d = JSON.parse(r.body);
-      const reason = (d.error && d.error.errors && d.error.errors[0] && d.error.errors[0].reason) || '';
-      if (reason === 'quotaExceeded') return { ok: false, msg: '일일 할당량 초과 (한국 시간 오후 4시경 초기화)' };
-      if (reason === 'accessNotConfigured') return { ok: false, msg: 'YouTube Data API v3가 활성화되지 않았습니다' };
+      const reason =
+        (d.error && d.error.errors && d.error.errors[0] && d.error.errors[0].reason) || '';
+      if (reason === 'quotaExceeded')
+        return { ok: false, msg: '일일 할당량 초과 (한국 시간 오후 4시경 초기화)' };
+      if (reason === 'accessNotConfigured')
+        return { ok: false, msg: 'YouTube Data API v3가 활성화되지 않았습니다' };
     } catch (_) {}
     return { ok: false, msg: 'API 키가 유효하지 않습니다' };
   }
@@ -27,7 +32,10 @@ async function _testYouTube(key) {
 
 async function _testClaude(key) {
   if (!key) return { skip: true };
-  const r = await httpsGet('https://api.anthropic.com/v1/models', { 'x-api-key': key, 'anthropic-version': '2023-06-01' });
+  const r = await httpsGet('https://api.anthropic.com/v1/models', {
+    'x-api-key': key,
+    'anthropic-version': '2023-06-01',
+  });
   if (r.error) return { ok: false, msg: '네트워크 오류' };
   if (r.statusCode === 200) return { ok: true };
   if (r.statusCode === 401) return { ok: false, msg: 'API 키가 유효하지 않습니다' };
@@ -40,13 +48,14 @@ async function _testGemini(key) {
   const r = await httpsGet('https://generativelanguage.googleapis.com/v1beta/models?key=' + key);
   if (r.error) return { ok: false, msg: '네트워크 오류' };
   if (r.statusCode === 200) return { ok: true };
-  if (r.statusCode === 400 || r.statusCode === 403) return { ok: false, msg: 'API 키가 유효하지 않습니다' };
+  if (r.statusCode === 400 || r.statusCode === 403)
+    return { ok: false, msg: 'API 키가 유효하지 않습니다' };
   return { ok: false, msg: 'HTTP ' + r.statusCode };
 }
 
 async function _testOpenAI(key) {
   if (!key) return { skip: true };
-  const r = await httpsGet('https://api.openai.com/v1/models', { 'Authorization': 'Bearer ' + key });
+  const r = await httpsGet('https://api.openai.com/v1/models', { Authorization: 'Bearer ' + key });
   if (r.error) return { ok: false, msg: '네트워크 오류' };
   if (r.statusCode === 200) return { ok: true };
   if (r.statusCode === 401) return { ok: false, msg: 'API 키가 유효하지 않습니다' };
@@ -65,24 +74,29 @@ async function _testElevenLabs(key) {
 
 async function _testPexels(key) {
   if (!key) return { skip: true };
-  const r = await httpsGet('https://api.pexels.com/v1/search?query=test&per_page=1', { 'Authorization': key });
+  const r = await httpsGet('https://api.pexels.com/v1/search?query=test&per_page=1', {
+    Authorization: key,
+  });
   if (r.error) return { ok: false, msg: '네트워크 오류' };
   if (r.statusCode === 200) return { ok: true };
-  if (r.statusCode === 401 || r.statusCode === 403) return { ok: false, msg: 'API 키가 유효하지 않습니다' };
+  if (r.statusCode === 401 || r.statusCode === 403)
+    return { ok: false, msg: 'API 키가 유효하지 않습니다' };
   return { ok: false, msg: 'HTTP ' + r.statusCode };
 }
 
 function _testPerplexity(key) {
   if (!key) return { skip: true };
   // ★ P2-fix: formatOnly 플래그 추가 — UI에서 "형식만 확인됨" vs "실제 연결 성공" 구분 가능
-  if (key.startsWith('pplx-') && key.length > 20) return { ok: true, formatOnly: true, msg: '형식 확인 (실제 호출 시 검증됩니다)' };
+  if (key.startsWith('pplx-') && key.length > 20)
+    return { ok: true, formatOnly: true, msg: '형식 확인 (실제 호출 시 검증됩니다)' };
   return { ok: false, msg: '키 형식이 올바르지 않습니다 (pplx-... 형식)' };
 }
 
 function _testTTS(key) {
   if (!key) return { skip: true };
   // ★ P2-fix: formatOnly 플래그 추가
-  if (key.startsWith('AIza') && key.length > 30) return { ok: true, formatOnly: true, msg: '형식 확인 (Cloud Text-to-Speech API 활성화 필요)' };
+  if (key.startsWith('AIza') && key.length > 30)
+    return { ok: true, formatOnly: true, msg: '형식 확인 (Cloud Text-to-Speech API 활성화 필요)' };
   return { ok: false, msg: '키 형식이 올바르지 않습니다 (AIza... 형식)' };
 }
 
@@ -112,7 +126,7 @@ function registerKeyTestIPC(ipcMain, assertTrustedSender, readEncryptedKeys) {
 
     try {
       const result = await TEST_MAP[provider](key);
-      log.info('[KeyTest]', provider, result.ok ? 'OK' : ('FAIL: ' + (result.msg || '')));
+      log.info('[KeyTest]', provider, result.ok ? 'OK' : 'FAIL: ' + (result.msg || ''));
       return result;
     } catch (e) {
       log.error('[KeyTest]', provider, e.message);
@@ -131,7 +145,7 @@ function registerKeyTestIPC(ipcMain, assertTrustedSender, readEncryptedKeys) {
 
     try {
       const result = await TEST_MAP[provider](key.trim());
-      log.info('[KeyTest:direct]', provider, result.ok ? 'OK' : ('FAIL: ' + (result.msg || '')));
+      log.info('[KeyTest:direct]', provider, result.ok ? 'OK' : 'FAIL: ' + (result.msg || ''));
       return result;
     } catch (e) {
       log.error('[KeyTest:direct]', provider, e.message);

@@ -7,7 +7,9 @@ import shared from '../shared-config.json';
 export const CONFIG = {
   // ── 서버 URL ──
   // 빌드 시 VITE_PROXY_BASE 로 오버라이드 가능(.env 참고). 미설정 시 기본값 사용.
-  PROXY_BASE: import.meta.env.VITE_PROXY_BASE || 'https://wotseowsskgobnusiacg.supabase.co/functions/v1/proxy',
+  PROXY_BASE:
+    import.meta.env.VITE_PROXY_BASE ||
+    'https://wotseowsskgobnusiacg.supabase.co/functions/v1/proxy',
 
   // ── 공용 값 (shared-config.json — 기본값, 서버에서 동적 갱신 가능) ──
   DEFAULT_GEMINI_MODEL: shared.DEFAULT_GEMINI_MODEL,
@@ -47,9 +49,15 @@ export async function fetchServerConfig() {
   try {
     // ★ Fix: Electron file://에서 Origin: null → X-App-Client 헤더 필수 (P1-6 CORS 강화 대응)
     const headers = {
-      'X-App-Client': (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.isElectron) ? 'electron' : 'dev'
+      'X-App-Client':
+        typeof window !== 'undefined' && window.electronAPI && window.electronAPI.isElectron
+          ? 'electron'
+          : 'dev',
     };
-    const r = await fetch(CONFIG.PROXY_BASE + '/api/config', { headers, signal: AbortSignal.timeout(5000) });
+    const r = await fetch(CONFIG.PROXY_BASE + '/api/config', {
+      headers,
+      signal: AbortSignal.timeout(5000),
+    });
     if (!r.ok) return;
     const data = await r.json();
     // ★ v3.5.8: allowlist 검증 — 서버 오작동/잘못된 값 전파 방지
@@ -59,12 +67,20 @@ export async function fetchServerConfig() {
     if (data.DEFAULT_CLAUDE_MODEL && ALLOWED_CLAUDE_MODELS.has(data.DEFAULT_CLAUDE_MODEL)) {
       CONFIG.DEFAULT_CLAUDE_MODEL = data.DEFAULT_CLAUDE_MODEL;
     }
-    if (data.MAX_OUTPUT_TOKENS && typeof data.MAX_OUTPUT_TOKENS === 'number'
-        && data.MAX_OUTPUT_TOKENS > 0 && data.MAX_OUTPUT_TOKENS <= 32768) {
+    if (
+      data.MAX_OUTPUT_TOKENS &&
+      typeof data.MAX_OUTPUT_TOKENS === 'number' &&
+      data.MAX_OUTPUT_TOKENS > 0 &&
+      data.MAX_OUTPUT_TOKENS <= 32768
+    ) {
       CONFIG.MAX_OUTPUT_TOKENS = data.MAX_OUTPUT_TOKENS;
     }
-    if (data.MAX_OUTPUT_TOKENS_SHORT && typeof data.MAX_OUTPUT_TOKENS_SHORT === 'number'
-        && data.MAX_OUTPUT_TOKENS_SHORT > 0 && data.MAX_OUTPUT_TOKENS_SHORT <= 16384) {
+    if (
+      data.MAX_OUTPUT_TOKENS_SHORT &&
+      typeof data.MAX_OUTPUT_TOKENS_SHORT === 'number' &&
+      data.MAX_OUTPUT_TOKENS_SHORT > 0 &&
+      data.MAX_OUTPUT_TOKENS_SHORT <= 16384
+    ) {
       CONFIG.MAX_OUTPUT_TOKENS_SHORT = data.MAX_OUTPUT_TOKENS_SHORT;
     }
   } catch (e) {

@@ -5,35 +5,60 @@
 // ═══════════════════════════════════════════════════════════
 export {
   // auth
-  initSession, getSession, setSession, clearSession,
-  getToken, getUser,
-  initApiKeys, getApiKeys, setApiKeys, hasApiKeys, reloadApiKeys, isKeySaved,
+  initSession,
+  getSession,
+  setSession,
+  clearSession,
+  getToken,
+  getUser,
+  initApiKeys,
+  getApiKeys,
+  setApiKeys,
+  hasApiKeys,
+  reloadApiKeys,
+  isKeySaved,
   onSessionStorageFail,
-  cfg, hasKey, hasYtKey,
-  proxyFetch, clearRefreshInterval,
-  authLogin, authSignup,
-  checkThrottle, fetchWithTimeout,
+  cfg,
+  hasKey,
+  hasYtKey,
+  proxyFetch,
+  clearRefreshInterval,
+  authLogin,
+  authSignup,
+  checkThrottle,
+  fetchWithTimeout,
   // 정적 값
   PROXY_BASE,
-  TTS_CHUNK_SIZE, TTS_CHUNK_MIN_BREAK,
+  TTS_CHUNK_SIZE,
+  TTS_CHUNK_MIN_BREAK,
   // 동적 값 (runtime getter)
-  getDefaultGeminiModel, getDefaultClaudeModel, getDefaultOpenAIModel,
-  getMaxPromptChars, getMaxPromptCharsPro,
-  getMaxOutputTokens, getMaxOutputTokensShort,
+  getDefaultGeminiModel,
+  getDefaultClaudeModel,
+  getDefaultOpenAIModel,
+  getMaxPromptChars,
+  getMaxPromptCharsPro,
+  getMaxOutputTokens,
+  getMaxOutputTokensShort,
   // CONFIG 자체 (소비자가 CONFIG.xxx 직접 참조용)
-  CONFIG
+  CONFIG,
 } from './client-proxy-auth.js';
 
 export {
   // llm
-  callLLM, callLLMPro, callLLMStream,
-  callGeminiVideo, callGeminiVideoStream, callPerplexity,
-  resolveProvider
+  callLLM,
+  callLLMPro,
+  callLLMStream,
+  callGeminiVideo,
+  callGeminiVideoStream,
+  callPerplexity,
+  resolveProvider,
 } from './client-proxy-llm.js';
 
 export {
   // media
   ytFetch,
-  genElevenLabs, uploadToElevenLabs,
-  patchApi, setupVoiceHandlers
+  genElevenLabs,
+  uploadToElevenLabs,
+  patchApi,
+  setupVoiceHandlers,
 } from './client-proxy-media.js';

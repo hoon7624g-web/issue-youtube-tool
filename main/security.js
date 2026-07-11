@@ -40,14 +40,22 @@ function hardenChildWindow(win, allowedOrigins) {
   if (!win || win.isDestroyed()) return;
   const wc = win.webContents;
   wc.setWindowOpenHandler(() => ({ action: 'deny' }));
-  wc.session.setPermissionRequestHandler((_wc, _perm, callback) => { callback(false); });
+  wc.session.setPermissionRequestHandler((_wc, _perm, callback) => {
+    callback(false);
+  });
   wc.on('will-navigate', (e, url) => {
-    try { if (!allowedOrigins.includes(new URL(url).origin)) e.preventDefault(); }
-    catch(err) { e.preventDefault(); }
+    try {
+      if (!allowedOrigins.includes(new URL(url).origin)) e.preventDefault();
+    } catch (err) {
+      e.preventDefault();
+    }
   });
   wc.on('will-redirect', (e, url) => {
-    try { if (!allowedOrigins.includes(new URL(url).origin)) e.preventDefault(); }
-    catch(err) { e.preventDefault(); }
+    try {
+      if (!allowedOrigins.includes(new URL(url).origin)) e.preventDefault();
+    } catch (err) {
+      e.preventDefault();
+    }
   });
 }
 

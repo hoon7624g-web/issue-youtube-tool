@@ -4,7 +4,7 @@
 //           웹(개발): 직접 fetch (개발/테스트 전용)
 // v3.6.2 — P0-1: 폼 입력이 비고 저장된 키가 있으면 testApiKey(provider)로 저장된 키 테스트
 // ═══════════════════════════════════════
-import { $ , el } from '../utils.js';
+import { $, el } from '../utils.js';
 import { fetchWithTimeout, isKeySaved } from '../../client-proxy-auth.js';
 
 const _isElectron = !!(window.electronAPI && window.electronAPI.testApiKeyDirect);
@@ -17,84 +17,126 @@ const _isElectron = !!(window.electronAPI && window.electronAPI.testApiKeyDirect
 async function _webTestYouTube(key) {
   if (!key) return { skip: true };
   try {
-    const r = await fetchWithTimeout('https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ&maxResults=1&key=' + key, {}, 10000);
+    const r = await fetchWithTimeout(
+      'https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ&maxResults=1&key=' + key,
+      {},
+      10000
+    );
     if (r.status === 200) return { ok: true };
     if (r.status === 403) {
       const d = await r.json().catch(() => ({}));
-      const reason = (d.error && d.error.errors && d.error.errors[0] && d.error.errors[0].reason) || '';
-      if (reason === 'quotaExceeded') return { ok: false, msg: '일일 할당량 초과 (한국 시간 오후 4시경 초기화)' };
-      if (reason === 'accessNotConfigured') return { ok: false, msg: 'YouTube Data API v3가 활성화되지 않았습니다' };
+      const reason =
+        (d.error && d.error.errors && d.error.errors[0] && d.error.errors[0].reason) || '';
+      if (reason === 'quotaExceeded')
+        return { ok: false, msg: '일일 할당량 초과 (한국 시간 오후 4시경 초기화)' };
+      if (reason === 'accessNotConfigured')
+        return { ok: false, msg: 'YouTube Data API v3가 활성화되지 않았습니다' };
       return { ok: false, msg: 'API 키가 유효하지 않습니다' };
     }
     if (r.status === 400) return { ok: false, msg: 'API 키 형식이 올바르지 않습니다' };
     return { ok: false, msg: 'HTTP ' + r.status };
-  } catch (e) { return { ok: false, msg: '네트워크 오류: ' + (e.message || '') }; }
+  } catch (e) {
+    return { ok: false, msg: '네트워크 오류: ' + (e.message || '') };
+  }
 }
 
 async function _webTestClaude(key) {
   if (!key) return { skip: true };
   try {
-    const r = await fetchWithTimeout('https://api.anthropic.com/v1/models', {
-      headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' }
-    }, 10000);
+    const r = await fetchWithTimeout(
+      'https://api.anthropic.com/v1/models',
+      {
+        headers: {
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+      },
+      10000
+    );
     if (r.status === 200) return { ok: true };
     if (r.status === 401) return { ok: false, msg: 'API 키가 유효하지 않습니다' };
     if (r.status === 403) return { ok: false, msg: '키 권한이 부족합니다' };
     return { ok: false, msg: 'HTTP ' + r.status };
-  } catch (e) { return { ok: false, msg: '네트워크 오류' }; }
+  } catch (e) {
+    return { ok: false, msg: '네트워크 오류' };
+  }
 }
 
 async function _webTestGemini(key) {
   if (!key) return { skip: true };
   try {
-    const r = await fetchWithTimeout('https://generativelanguage.googleapis.com/v1beta/models?key=' + key, {}, 10000);
+    const r = await fetchWithTimeout(
+      'https://generativelanguage.googleapis.com/v1beta/models?key=' + key,
+      {},
+      10000
+    );
     if (r.status === 200) return { ok: true };
-    if (r.status === 400 || r.status === 403) return { ok: false, msg: 'API 키가 유효하지 않습니다' };
+    if (r.status === 400 || r.status === 403)
+      return { ok: false, msg: 'API 키가 유효하지 않습니다' };
     return { ok: false, msg: 'HTTP ' + r.status };
-  } catch (e) { return { ok: false, msg: '네트워크 오류' }; }
+  } catch (e) {
+    return { ok: false, msg: '네트워크 오류' };
+  }
 }
 
 async function _webTestOpenAI(key) {
   if (!key) return { skip: true };
   try {
-    const r = await fetchWithTimeout('https://api.openai.com/v1/models', {
-      headers: { 'Authorization': 'Bearer ' + key }
-    }, 10000);
+    const r = await fetchWithTimeout(
+      'https://api.openai.com/v1/models',
+      {
+        headers: { Authorization: 'Bearer ' + key },
+      },
+      10000
+    );
     if (r.status === 200) return { ok: true };
     if (r.status === 401) return { ok: false, msg: 'API 키가 유효하지 않습니다' };
     if (r.status === 429) return { ok: false, msg: '요청 한도 초과' };
     return { ok: false, msg: 'HTTP ' + r.status };
-  } catch (e) { return { ok: false, msg: '네트워크 오류' }; }
+  } catch (e) {
+    return { ok: false, msg: '네트워크 오류' };
+  }
 }
 
 async function _webTestElevenLabs(key) {
   if (!key) return { skip: true };
   // ElevenLabs 키 형식: 32자 hex 또는 sk_ 접두사
-  if (key.length >= 20) return { ok: true, formatOnly: true, msg: '키 형식 확인됨 (실제 음성 생성 시 검증)' };
+  if (key.length >= 20)
+    return { ok: true, formatOnly: true, msg: '키 형식 확인됨 (실제 음성 생성 시 검증)' };
   return { ok: false, msg: 'API 키 형식이 올바르지 않습니다' };
 }
 
 async function _webTestPexels(key) {
   if (!key) return { skip: true };
   try {
-    const r = await fetchWithTimeout('https://api.pexels.com/v1/search?query=test&per_page=1', {
-      headers: { 'Authorization': key }
-    }, 10000);
+    const r = await fetchWithTimeout(
+      'https://api.pexels.com/v1/search?query=test&per_page=1',
+      {
+        headers: { Authorization: key },
+      },
+      10000
+    );
     if (r.status === 200) return { ok: true };
-    if (r.status === 401 || r.status === 403) return { ok: false, msg: 'API 키가 유효하지 않습니다' };
+    if (r.status === 401 || r.status === 403)
+      return { ok: false, msg: 'API 키가 유효하지 않습니다' };
     return { ok: false, msg: 'HTTP ' + r.status };
-  } catch (e) { return { ok: false, msg: '네트워크 오류' }; }
+  } catch (e) {
+    return { ok: false, msg: '네트워크 오류' };
+  }
 }
 
 function _webTestPerplexity(key) {
   if (!key) return { skip: true };
-  if (key.startsWith('pplx-') && key.length > 20) return { ok: true, msg: '형식 확인 (실제 호출 시 검증됩니다)' };
+  if (key.startsWith('pplx-') && key.length > 20)
+    return { ok: true, msg: '형식 확인 (실제 호출 시 검증됩니다)' };
   return { ok: false, msg: '키 형식이 올바르지 않습니다 (pplx-... 형식)' };
 }
 
 function _webTestTTS(key) {
   if (!key) return { skip: true };
-  if (key.startsWith('AIza') && key.length > 30) return { ok: true, msg: '형식 확인 (Cloud Text-to-Speech API 활성화 필요)' };
+  if (key.startsWith('AIza') && key.length > 30)
+    return { ok: true, msg: '형식 확인 (Cloud Text-to-Speech API 활성화 필요)' };
   return { ok: false, msg: '키 형식이 올바르지 않습니다 (AIza... 형식)' };
 }
 
@@ -157,18 +199,79 @@ export async function validateAllKeys() {
   // resolveProvKey: 입력값 우선, 없으면 빈 문자열 (→ _runTest가 testApiKey(provider)로 자동 전환)
   const useStored = (provName) => isKeySaved(provName);
   const tests = [
-    { label: 'YouTube', provider: 'youtube', key: yt.trim(), required: true, hasSaved: useStored('youtube') },
+    {
+      label: 'YouTube',
+      provider: 'youtube',
+      key: yt.trim(),
+      required: true,
+      hasSaved: useStored('youtube'),
+    },
   ];
-  if (llmProvider === 'claude') tests.push({ label: 'Claude', provider: 'claude', key: claude.trim(), required: true, hasSaved: useStored('claude') });
-  else if (llmProvider === 'gemini') tests.push({ label: 'Gemini', provider: 'gemini', key: gemini.trim(), required: true, hasSaved: useStored('gemini') });
-  else if (llmProvider === 'chatgpt') tests.push({ label: 'ChatGPT', provider: 'openai', key: openai.trim(), required: true, hasSaved: useStored('openai') });
+  if (llmProvider === 'claude')
+    tests.push({
+      label: 'Claude',
+      provider: 'claude',
+      key: claude.trim(),
+      required: true,
+      hasSaved: useStored('claude'),
+    });
+  else if (llmProvider === 'gemini')
+    tests.push({
+      label: 'Gemini',
+      provider: 'gemini',
+      key: gemini.trim(),
+      required: true,
+      hasSaved: useStored('gemini'),
+    });
+  else if (llmProvider === 'chatgpt')
+    tests.push({
+      label: 'ChatGPT',
+      provider: 'openai',
+      key: openai.trim(),
+      required: true,
+      hasSaved: useStored('openai'),
+    });
   if (llmProvider !== 'gemini' && (gaiStudio.trim() || useStored('googleAiStudio'))) {
-    tests.push({ label: 'Google AI (영상 분석)', provider: 'googleAiStudio', key: gaiStudio.trim(), required: true, hasSaved: useStored('googleAiStudio') });
+    tests.push({
+      label: 'Google AI (영상 분석)',
+      provider: 'googleAiStudio',
+      key: gaiStudio.trim(),
+      required: true,
+      hasSaved: useStored('googleAiStudio'),
+    });
   }
-  if (tts.trim() || useStored('tts')) tests.push({ label: 'Google TTS', provider: 'tts', key: tts.trim(), required: false, hasSaved: useStored('tts') });
-  if (el11.trim() || useStored('elevenlabs')) tests.push({ label: 'ElevenLabs', provider: 'elevenlabs', key: el11.trim(), required: false, hasSaved: useStored('elevenlabs') });
-  if (pexels.trim() || useStored('pexels')) tests.push({ label: 'Pexels', provider: 'pexels', key: pexels.trim(), required: false, hasSaved: useStored('pexels') });
-  if (perplexity.trim() || useStored('perplexity')) tests.push({ label: 'Perplexity', provider: 'perplexity', key: perplexity.trim(), required: false, hasSaved: useStored('perplexity') });
+  if (tts.trim() || useStored('tts'))
+    tests.push({
+      label: 'Google TTS',
+      provider: 'tts',
+      key: tts.trim(),
+      required: false,
+      hasSaved: useStored('tts'),
+    });
+  if (el11.trim() || useStored('elevenlabs'))
+    tests.push({
+      label: 'ElevenLabs',
+      provider: 'elevenlabs',
+      key: el11.trim(),
+      required: false,
+      hasSaved: useStored('elevenlabs'),
+    });
+  if (pexels.trim() || useStored('pexels'))
+    tests.push({
+      label: 'Pexels',
+      provider: 'pexels',
+      key: pexels.trim(),
+      required: false,
+      hasSaved: useStored('pexels'),
+    });
+  if (perplexity.trim() || useStored('perplexity'))
+    tests.push({
+      label: 'Perplexity',
+      provider: 'perplexity',
+      key: perplexity.trim(),
+      required: false,
+      hasSaved: useStored('perplexity'),
+    });
 
   btn.disabled = true;
   btn.textContent = '\u23F3 테스트 중...';
@@ -177,10 +280,19 @@ export async function validateAllKeys() {
   const methodNote = _isElectron ? 'Main Process IPC 경유' : '렌더러 직접 호출 (개발 모드)';
 
   area.textContent = '';
-  const wrap = el('div', { style: 'padding:16px;background:var(--bg);border-radius:var(--r2);border:1px solid var(--bdr)' });
-  const header = el('div', { style: 'font-size:13px;font-weight:600;margin-bottom:12px;color:var(--t1)' });
+  const wrap = el('div', {
+    style: 'padding:16px;background:var(--bg);border-radius:var(--r2);border:1px solid var(--bdr)',
+  });
+  const header = el('div', {
+    style: 'font-size:13px;font-weight:600;margin-bottom:12px;color:var(--t1)',
+  });
   header.appendChild(document.createTextNode('\uD83D\uDD0D API 연결 테스트 중...'));
-  header.appendChild(el('span', { style: 'font-size:10px;font-weight:400;color:var(--t4);margin-left:8px', textContent: methodNote }));
+  header.appendChild(
+    el('span', {
+      style: 'font-size:10px;font-weight:400;color:var(--t4);margin-left:8px',
+      textContent: methodNote,
+    })
+  );
   wrap.appendChild(header);
   const resultsEl = el('div', { id: 'validationResults' });
   wrap.appendChild(resultsEl);
@@ -192,15 +304,28 @@ export async function validateAllKeys() {
   let skipCount = 0;
 
   for (const t of tests) {
-    const row = el('div', { style: 'display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr)' });
+    const row = el('div', {
+      style:
+        'display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr)',
+    });
 
-    const icon = el('span', { style: 'width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;background:var(--bg2);color:var(--t3)', textContent: '\u23F3' });
+    const icon = el('span', {
+      style:
+        'width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;background:var(--bg2);color:var(--t3)',
+      textContent: '\u23F3',
+    });
     row.appendChild(icon);
 
-    const label = el('span', { style: 'font-size:13px;font-weight:500;min-width:120px;color:var(--t1)', textContent: t.label + (t.required ? ' *' : '') });
+    const label = el('span', {
+      style: 'font-size:13px;font-weight:500;min-width:120px;color:var(--t1)',
+      textContent: t.label + (t.required ? ' *' : ''),
+    });
     row.appendChild(label);
 
-    const status = el('span', { style: 'font-size:12px;color:var(--t3)', textContent: '확인 중...' });
+    const status = el('span', {
+      style: 'font-size:12px;color:var(--t3)',
+      textContent: '확인 중...',
+    });
     row.appendChild(status);
 
     resultsEl.appendChild(row);
@@ -213,8 +338,16 @@ export async function validateAllKeys() {
         icon.style.color = 'var(--t4)';
         status.textContent = '미입력';
         status.style.color = 'var(--t4)';
-        if (t.required) { requiredFailCount++; status.textContent = '미입력 (필수)'; status.style.color = 'var(--red)'; icon.textContent = '!'; icon.style.background = 'var(--red-bg)'; icon.style.color = 'var(--red)'; }
-        else { skipCount++; }
+        if (t.required) {
+          requiredFailCount++;
+          status.textContent = '미입력 (필수)';
+          status.style.color = 'var(--red)';
+          icon.textContent = '!';
+          icon.style.background = 'var(--red-bg)';
+          icon.style.color = 'var(--red)';
+        } else {
+          skipCount++;
+        }
       } else if (result.ok && result.formatOnly) {
         // ★ P2-fix: 형식만 확인된 경우 — 성공이지만 경고 스타일로 구분
         icon.textContent = '\u26A0';
@@ -236,8 +369,9 @@ export async function validateAllKeys() {
         icon.style.color = 'var(--red)';
         status.textContent = result.msg || '연결 실패';
         status.style.color = 'var(--red)';
-        if (t.required) { requiredFailCount++; }
-        else {
+        if (t.required) {
+          requiredFailCount++;
+        } else {
           optionalFailCount++;
           icon.style.background = 'var(--yel-bg)';
           icon.style.color = 'var(--yel)';
@@ -251,26 +385,40 @@ export async function validateAllKeys() {
       icon.style.color = 'var(--red)';
       status.textContent = '오류: ' + (e.message || '').substring(0, 50);
       status.style.color = 'var(--red)';
-      if (t.required) { requiredFailCount++; }
-      else { optionalFailCount++; }
+      if (t.required) {
+        requiredFailCount++;
+      } else {
+        optionalFailCount++;
+      }
     }
   }
 
   const totalFailCount = requiredFailCount + optionalFailCount;
-  const summary = el('div', { style: 'margin-top:12px;padding:10px 14px;border-radius:var(--r);font-size:13px;font-weight:600;line-height:1.5' });
+  const summary = el('div', {
+    style:
+      'margin-top:12px;padding:10px 14px;border-radius:var(--r);font-size:13px;font-weight:600;line-height:1.5',
+  });
 
   if (totalFailCount === 0) {
     summary.style.background = 'var(--grn-bg)';
     summary.style.color = 'var(--grn)';
-    summary.textContent = '\u2713 모든 API 키가 정상입니다!' + (skipCount > 0 ? ' (선택 키 ' + skipCount + '개 미입력)' : '');
+    summary.textContent =
+      '\u2713 모든 API 키가 정상입니다!' +
+      (skipCount > 0 ? ' (선택 키 ' + skipCount + '개 미입력)' : '');
   } else if (requiredFailCount === 0 && optionalFailCount > 0) {
     summary.style.background = 'var(--yel-bg)';
     summary.style.color = 'var(--yel)';
-    summary.textContent = '\u2713 필수 키는 정상입니다! 선택 키 ' + optionalFailCount + '개에 문제가 있지만 바로 시작할 수 있습니다.';
+    summary.textContent =
+      '\u2713 필수 키는 정상입니다! 선택 키 ' +
+      optionalFailCount +
+      '개에 문제가 있지만 바로 시작할 수 있습니다.';
   } else {
     summary.style.background = 'var(--red-bg)';
     summary.style.color = 'var(--red)';
-    summary.textContent = '\u2717 필수 키 ' + requiredFailCount + '개에 문제가 있습니다. 위 오류 메시지를 확인해주세요.';
+    summary.textContent =
+      '\u2717 필수 키 ' +
+      requiredFailCount +
+      '개에 문제가 있습니다. 위 오류 메시지를 확인해주세요.';
   }
   resultsEl.appendChild(summary);
 

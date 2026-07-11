@@ -19,11 +19,7 @@ import {
 import { SubtitleOverlay } from '../components/SubtitleOverlay';
 import { SceneLabel } from '../components/SceneLabel';
 import { ProgressBar } from '../components/ProgressBar';
-import {
-  msToFrames,
-  calculateSceneTimings,
-  generateSubtitlesFromScenes,
-} from '../utils/timing';
+import { msToFrames, calculateSceneTimings, generateSubtitlesFromScenes } from '../utils/timing';
 
 // ── 단일 장면 렌더링 (풋티지 배경 + 전환 효과) ──
 const SceneClip = ({ scene, durationFrames, index, totalScenes }) => {
@@ -40,25 +36,22 @@ const SceneClip = ({ scene, durationFrames, index, totalScenes }) => {
 
   // Ken Burns 효과: 느린 줌 + 패닝
   const zoomDirection = index % 2 === 0 ? 1 : -1;
-  const scale = interpolate(
-    frame,
-    [0, durationFrames],
-    [1.0, 1.08],
-    { extrapolateRight: 'clamp' }
-  );
-  const translateX = interpolate(
-    frame,
-    [0, durationFrames],
-    [0, 15 * zoomDirection],
-    { extrapolateRight: 'clamp' }
-  );
+  const scale = interpolate(frame, [0, durationFrames], [1.0, 1.08], { extrapolateRight: 'clamp' });
+  const translateX = interpolate(frame, [0, durationFrames], [0, 15 * zoomDirection], {
+    extrapolateRight: 'clamp',
+  });
 
   // ★ footageSrc는 파일명만 들어옴 → staticFile()로 URL 변환
   const rawSrc = scene.footageSrc;
   const src = rawSrc ? staticFile(rawSrc) : null;
 
   const isVideo = rawSrc && (rawSrc.endsWith('.mp4') || rawSrc.endsWith('.webm'));
-  const isImage = rawSrc && (rawSrc.endsWith('.jpg') || rawSrc.endsWith('.jpeg') || rawSrc.endsWith('.png') || rawSrc.endsWith('.webp'));
+  const isImage =
+    rawSrc &&
+    (rawSrc.endsWith('.jpg') ||
+      rawSrc.endsWith('.jpeg') ||
+      rawSrc.endsWith('.png') ||
+      rawSrc.endsWith('.webp'));
 
   return (
     <AbsoluteFill style={{ opacity: fadeIn }}>
@@ -154,9 +147,7 @@ export const IssueShortsTemplate = ({
 
   // 자막이 없으면 장면 텍스트로 자동 생성
   const finalSubtitles =
-    subtitles && subtitles.length > 0
-      ? subtitles
-      : generateSubtitlesFromScenes(scenes);
+    subtitles && subtitles.length > 0 ? subtitles : generateSubtitlesFromScenes(scenes);
 
   // ★ audioSrc도 파일명만 들어옴 → staticFile()로 변환
   const audioUrl = audioSrc ? staticFile(audioSrc) : null;
@@ -203,9 +194,7 @@ export const IssueShortsTemplate = ({
       <SubtitleOverlay subtitles={finalSubtitles} />
 
       {/* ── TTS 오디오 ── */}
-      {audioUrl && (
-        <Audio src={audioUrl} volume={1} startFrom={0} />
-      )}
+      {audioUrl && <Audio src={audioUrl} volume={1} startFrom={0} />}
 
       {/* ── 진행률 바 ── */}
       <ProgressBar />

@@ -20,23 +20,35 @@ const _webFallbackWarned = {};
 //   Electron에서는 _keyCache가 status snapshot이라 값이 true/false다. 웹 fallback fetch에 bool이 섞이면
 //   '?key=true' 같은 잘못된 URL이 만들어진다. 따라서 raw key 추출은 string만 인정한다.
 function _firstString(...vals) {
-  for (const v of vals) { if (typeof v === 'string' && v) return v; }
+  for (const v of vals) {
+    if (typeof v === 'string' && v) return v;
+  }
   return '';
 }
-function getGeminiKey(keys) { return _firstString(keys.googleAiStudio, keys.gemini); }
-function hasGeminiKey(keys) { return !!(keys.googleAiStudio || keys.gemini); }
+function getGeminiKey(keys) {
+  return _firstString(keys.googleAiStudio, keys.gemini);
+}
+function hasGeminiKey(keys) {
+  return !!(keys.googleAiStudio || keys.gemini);
+}
 // ★ v3.6.2 P0-1: 웹 fallback 진입 직전 호출 — Electron status가 잘못 흘러들어왔는지 검증
 function _assertRawKey(provider, key) {
   if (typeof key !== 'string' || !key) {
-    throw new Error(provider + ' API 호출 실패: 키가 메인 프로세스에만 보관되어 있습니다. 앱을 다시 시작해주세요.');
+    throw new Error(
+      provider + ' API 호출 실패: 키가 메인 프로세스에만 보관되어 있습니다. 앱을 다시 시작해주세요.'
+    );
   }
 }
 
 function _attachStreamAbort(signal, requestId, cleanup, reject, clearSafetyTimer) {
   if (!signal) return () => {};
   const onAbort = () => {
-    try { cleanup(); } catch (_) {}
-    try { if (clearSafetyTimer) clearSafetyTimer(); } catch (_) {}
+    try {
+      cleanup();
+    } catch (_) {}
+    try {
+      if (clearSafetyTimer) clearSafetyTimer();
+    } catch (_) {}
     if (window.electronAPI && window.electronAPI.cancelLLMStream) {
       Promise.resolve(window.electronAPI.cancelLLMStream(requestId)).catch(() => {});
     }
@@ -48,10 +60,11 @@ function _attachStreamAbort(signal, requestId, cleanup, reject, clearSafetyTimer
   }
   signal.addEventListener('abort', onAbort, { once: true });
   return () => {
-    try { signal.removeEventListener('abort', onAbort); } catch (_) {}
+    try {
+      signal.removeEventListener('abort', onAbort);
+    } catch (_) {}
   };
 }
-
 
 function _createRequestId() {
   return Date.now() + '-' + Math.random().toString(36).slice(2, 10);
@@ -78,15 +91,14 @@ async function _invokeElectronAbortable(invokeFactory, cancelFactory, signal) {
     };
     signal.addEventListener('abort', onAbort, { once: true });
     removeAbort = () => {
-      try { signal.removeEventListener('abort', onAbort); } catch (_) {}
+      try {
+        signal.removeEventListener('abort', onAbort);
+      } catch (_) {}
     };
   });
 
   try {
-    return await Promise.race([
-      Promise.resolve(invokeFactory(requestId)),
-      abortPromise,
-    ]);
+    return await Promise.race([Promise.resolve(invokeFactory(requestId)), abortPromise]);
   } finally {
     removeAbort();
   }
@@ -113,11 +125,18 @@ function _warnWebFallback(provider) {
   }
   if (_webFallbackWarned[provider]) return;
   _webFallbackWarned[provider] = true;
-  console.warn('[보안 경고] ' + provider + ' API를 브라우저에서 직접 호출합니다. API 키가 DevTools에 노출될 수 있습니다. 프로덕션에서는 Electron 빌드를 사용하세요.');
+  console.warn(
+    '[보안 경고] ' +
+      provider +
+      ' API를 브라우저에서 직접 호출합니다. API 키가 DevTools에 노출될 수 있습니다. 프로덕션에서는 Electron 빌드를 사용하세요.'
+  );
 }
 
 // ── 공통 재시도 래퍼 ──
-export async function withRetry(fn, { maxRetries = 2, backoff = 5000, label = 'API', signal } = {}) {
+export async function withRetry(
+  fn,
+  { maxRetries = 2, backoff = 5000, label = 'API', signal } = {}
+) {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     if (signal && signal.aborted) throw _toAbortError();
     try {
@@ -127,7 +146,7 @@ export async function withRetry(fn, { maxRetries = 2, backoff = 5000, label = 'A
       if (attempt === maxRetries) throw e;
       const status = e.status || 0;
       if (status === 429 || (status >= 500 && status < 600)) {
-        const delaySec = backoff * (attempt + 1) / 1000;
+        const delaySec = (backoff * (attempt + 1)) / 1000;
         toast(`${label} 오류 — ${delaySec}초 후 재시도...`, 'err');
         await wait(backoff * (attempt + 1));
         continue;
@@ -150,8 +169,16 @@ async function _callChatGPT(prompt, { signal } = {}) {
   if (!keys.openai) throw new Error('OpenAI API 키를 설정해주세요.');
   if (window.electronAPI && window.electronAPI.callOpenAI) {
     const r = await _invokeElectronAbortable(
-      (requestId) => window.electronAPI.callOpenAI(prompt.substring(0, CONFIG.MAX_PROMPT_CHARS), CONFIG.MAX_OUTPUT_TOKENS, requestId),
-      (requestId) => window.electronAPI.cancelLLMRequest ? window.electronAPI.cancelLLMRequest(requestId) : Promise.resolve(),
+      (requestId) =>
+        window.electronAPI.callOpenAI(
+          prompt.substring(0, CONFIG.MAX_PROMPT_CHARS),
+          CONFIG.MAX_OUTPUT_TOKENS,
+          requestId
+        ),
+      (requestId) =>
+        window.electronAPI.cancelLLMRequest
+          ? window.electronAPI.cancelLLMRequest(requestId)
+          : Promise.resolve(),
       signal
     );
     if (r && r.cancelled) throw _toAbortError();
@@ -162,16 +189,28 @@ async function _callChatGPT(prompt, { signal } = {}) {
   }
   _warnWebFallback('ChatGPT');
   _assertRawKey('ChatGPT', keys.openai);
-  const r = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + keys.openai },
-    body: JSON.stringify({ model: CONFIG.DEFAULT_OPENAI_MODEL, max_tokens: CONFIG.MAX_OUTPUT_TOKENS, messages: [{ role: 'user', content: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS) }] }),
-    signal,
-  }, 180000, signal);
+  const r = await fetchWithTimeout(
+    'https://api.openai.com/v1/chat/completions',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + keys.openai },
+      body: JSON.stringify({
+        model: CONFIG.DEFAULT_OPENAI_MODEL,
+        max_tokens: CONFIG.MAX_OUTPUT_TOKENS,
+        messages: [{ role: 'user', content: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS) }],
+      }),
+      signal,
+    },
+    180000,
+    signal
+  );
   if (r.status === 401) throw new Error('OpenAI API 키가 유효하지 않습니다.');
   if (r.status === 429) throw httpError(429, 'ChatGPT 요청 한도 초과');
   if (r.status >= 500) throw httpError(r.status, 'ChatGPT 서버 오류');
-  if (!r.ok) { const d = await r.json(); throw new Error(d.error && d.error.message || 'ChatGPT API 오류: ' + r.status); }
+  if (!r.ok) {
+    const d = await r.json();
+    throw new Error((d.error && d.error.message) || 'ChatGPT API 오류: ' + r.status);
+  }
   const d = await r.json();
   if (d.choices && d.choices[0] && d.choices[0].message) return d.choices[0].message.content || '';
   throw new Error('ChatGPT 응답 형식 오류');
@@ -183,8 +222,17 @@ async function _callGemini(prompt, { signal } = {}) {
   if (!geminiKey) throw new Error('Gemini / Google AI Studio API 키를 설정해주세요.');
   if (window.electronAPI && window.electronAPI.callGemini) {
     const r = await _invokeElectronAbortable(
-      (requestId) => window.electronAPI.callGemini(prompt.substring(0, CONFIG.MAX_PROMPT_CHARS), CONFIG.DEFAULT_GEMINI_MODEL, CONFIG.MAX_OUTPUT_TOKENS, requestId),
-      (requestId) => window.electronAPI.cancelLLMRequest ? window.electronAPI.cancelLLMRequest(requestId) : Promise.resolve(),
+      (requestId) =>
+        window.electronAPI.callGemini(
+          prompt.substring(0, CONFIG.MAX_PROMPT_CHARS),
+          CONFIG.DEFAULT_GEMINI_MODEL,
+          CONFIG.MAX_OUTPUT_TOKENS,
+          requestId
+        ),
+      (requestId) =>
+        window.electronAPI.cancelLLMRequest
+          ? window.electronAPI.cancelLLMRequest(requestId)
+          : Promise.resolve(),
       signal
     );
     if (r && r.cancelled) throw _toAbortError();
@@ -195,17 +243,33 @@ async function _callGemini(prompt, { signal } = {}) {
   }
   _warnWebFallback('Gemini');
   _assertRawKey('Gemini', geminiKey);
-  const r = await fetchWithTimeout('https://generativelanguage.googleapis.com/v1beta/models/' + CONFIG.DEFAULT_GEMINI_MODEL + ':generateContent?key=' + geminiKey, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ parts: [{ text: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS) }] }], generationConfig: { maxOutputTokens: CONFIG.MAX_OUTPUT_TOKENS } }),
-    signal,
-  }, 180000, signal);
+  const r = await fetchWithTimeout(
+    'https://generativelanguage.googleapis.com/v1beta/models/' +
+      CONFIG.DEFAULT_GEMINI_MODEL +
+      ':generateContent?key=' +
+      geminiKey,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS) }] }],
+        generationConfig: { maxOutputTokens: CONFIG.MAX_OUTPUT_TOKENS },
+      }),
+      signal,
+    },
+    180000,
+    signal
+  );
   if (r.status === 400) throw new Error('Gemini API 키가 유효하지 않습니다.');
   if (r.status === 429) throw httpError(429, 'Gemini 요청 한도 초과');
   if (r.status >= 500) throw httpError(r.status, 'Gemini 서버 오류');
-  if (!r.ok) { const d = await r.json(); throw new Error(d.error && d.error.message || 'Gemini API 오류: ' + r.status); }
+  if (!r.ok) {
+    const d = await r.json();
+    throw new Error((d.error && d.error.message) || 'Gemini API 오류: ' + r.status);
+  }
   const d = await r.json();
-  if (d.candidates && d.candidates[0] && d.candidates[0].content) return d.candidates[0].content.parts.map(p => p.text || '').join('');
+  if (d.candidates && d.candidates[0] && d.candidates[0].content)
+    return d.candidates[0].content.parts.map((p) => p.text || '').join('');
   throw new Error('Gemini 응답 형식 오류');
 }
 
@@ -215,8 +279,17 @@ async function _callClaude(prompt, { signal } = {}) {
   const claudeModel = keys.claudeModel || CONFIG.DEFAULT_CLAUDE_MODEL;
   if (window.electronAPI && window.electronAPI.callClaude) {
     const r = await _invokeElectronAbortable(
-      (requestId) => window.electronAPI.callClaude(prompt.substring(0, CONFIG.MAX_PROMPT_CHARS), claudeModel, CONFIG.MAX_OUTPUT_TOKENS, requestId),
-      (requestId) => window.electronAPI.cancelLLMRequest ? window.electronAPI.cancelLLMRequest(requestId) : Promise.resolve(),
+      (requestId) =>
+        window.electronAPI.callClaude(
+          prompt.substring(0, CONFIG.MAX_PROMPT_CHARS),
+          claudeModel,
+          CONFIG.MAX_OUTPUT_TOKENS,
+          requestId
+        ),
+      (requestId) =>
+        window.electronAPI.cancelLLMRequest
+          ? window.electronAPI.cancelLLMRequest(requestId)
+          : Promise.resolve(),
       signal
     );
     if (r && r.cancelled) throw _toAbortError();
@@ -227,18 +300,35 @@ async function _callClaude(prompt, { signal } = {}) {
   }
   _warnWebFallback('Claude');
   _assertRawKey('Claude', keys.claude);
-  const r = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': keys.claude, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-    body: JSON.stringify({ model: claudeModel, max_tokens: CONFIG.MAX_OUTPUT_TOKENS, messages: [{ role: 'user', content: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS) }] }),
-    signal,
-  }, 180000, signal);
+  const r = await fetchWithTimeout(
+    'https://api.anthropic.com/v1/messages',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': keys.claude,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: claudeModel,
+        max_tokens: CONFIG.MAX_OUTPUT_TOKENS,
+        messages: [{ role: 'user', content: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS) }],
+      }),
+      signal,
+    },
+    180000,
+    signal
+  );
   if (r.status === 401) throw new Error('Claude API 키가 유효하지 않습니다.');
   if (r.status === 429) throw httpError(429, 'Claude 요청 한도 초과');
   if (r.status >= 500) throw httpError(r.status, 'Claude 서버 오류');
-  if (!r.ok) { const d = await r.json(); throw new Error(d.error && d.error.message || 'Claude API 오류: ' + r.status); }
+  if (!r.ok) {
+    const d = await r.json();
+    throw new Error((d.error && d.error.message) || 'Claude API 오류: ' + r.status);
+  }
   const d = await r.json();
-  if (d.content) return d.content.map(c => c.text).join('');
+  if (d.content) return d.content.map((c) => c.text).join('');
   return typeof d === 'string' ? d : JSON.stringify(d);
 }
 
@@ -247,8 +337,10 @@ async function _callLLMInternal(prompt, { signal } = {}) {
   const keys = getApiKeys();
   const provider = resolveProvider(keys);
 
-  if (provider === 'chatgpt') return withRetry(() => _callChatGPT(prompt, { signal }), { label: 'ChatGPT', signal });
-  if (provider === 'gemini') return withRetry(() => _callGemini(prompt, { signal }), { label: 'Gemini', signal });
+  if (provider === 'chatgpt')
+    return withRetry(() => _callChatGPT(prompt, { signal }), { label: 'ChatGPT', signal });
+  if (provider === 'gemini')
+    return withRetry(() => _callGemini(prompt, { signal }), { label: 'Gemini', signal });
   return withRetry(() => _callClaude(prompt, { signal }), { label: 'Claude', signal });
 }
 
@@ -266,8 +358,17 @@ async function _callGeminiPro(prompt, { signal } = {}) {
   if (!gKey) throw new Error('Gemini / Google AI Studio API 키가 필요합니다 (Pro 윤문)');
   if (window.electronAPI && window.electronAPI.callGemini) {
     const r = await _invokeElectronAbortable(
-      (requestId) => window.electronAPI.callGemini(prompt.substring(0, CONFIG.MAX_PROMPT_CHARS_PRO), CONFIG.DEFAULT_GEMINI_MODEL, CONFIG.MAX_OUTPUT_TOKENS, requestId),
-      (requestId) => window.electronAPI.cancelLLMRequest ? window.electronAPI.cancelLLMRequest(requestId) : Promise.resolve(),
+      (requestId) =>
+        window.electronAPI.callGemini(
+          prompt.substring(0, CONFIG.MAX_PROMPT_CHARS_PRO),
+          CONFIG.DEFAULT_GEMINI_MODEL,
+          CONFIG.MAX_OUTPUT_TOKENS,
+          requestId
+        ),
+      (requestId) =>
+        window.electronAPI.cancelLLMRequest
+          ? window.electronAPI.cancelLLMRequest(requestId)
+          : Promise.resolve(),
       signal
     );
     if (r && r.cancelled) throw _toAbortError();
@@ -278,23 +379,44 @@ async function _callGeminiPro(prompt, { signal } = {}) {
   }
   _warnWebFallback('Gemini');
   _assertRawKey('Gemini', gKey);
-  const r = await fetchWithTimeout('https://generativelanguage.googleapis.com/v1beta/models/' + CONFIG.DEFAULT_GEMINI_MODEL + ':generateContent?key=' + gKey, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ parts: [{ text: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS_PRO) }] }], generationConfig: { maxOutputTokens: CONFIG.MAX_OUTPUT_TOKENS } }),
-    signal,
-  }, 180000, signal);
+  const r = await fetchWithTimeout(
+    'https://generativelanguage.googleapis.com/v1beta/models/' +
+      CONFIG.DEFAULT_GEMINI_MODEL +
+      ':generateContent?key=' +
+      gKey,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS_PRO) }] }],
+        generationConfig: { maxOutputTokens: CONFIG.MAX_OUTPUT_TOKENS },
+      }),
+      signal,
+    },
+    180000,
+    signal
+  );
   if (r.status === 400) throw new Error('Gemini Pro API 키가 유효하지 않습니다.');
   if (r.status === 429) throw httpError(429, 'Gemini Pro 요청 한도 초과');
   if (r.status >= 500) throw httpError(r.status, 'Gemini Pro 서버 오류');
-  if (!r.ok) { const d = await r.json(); throw new Error(d.error && d.error.message || 'Gemini Pro 오류: ' + r.status); }
+  if (!r.ok) {
+    const d = await r.json();
+    throw new Error((d.error && d.error.message) || 'Gemini Pro 오류: ' + r.status);
+  }
   const d = await r.json();
-  if (d.candidates && d.candidates[0] && d.candidates[0].content) return d.candidates[0].content.parts.map(p => p.text || '').join('');
+  if (d.candidates && d.candidates[0] && d.candidates[0].content)
+    return d.candidates[0].content.parts.map((p) => p.text || '').join('');
   throw new Error('Gemini Pro 응답 형식 오류');
 }
 
 export async function callLLMPro(prompt, { signal } = {}) {
   checkThrottle();
-  return withRetry(() => _callGeminiPro(prompt, { signal }), { maxRetries: 2, backoff: 10000, label: 'Gemini Pro', signal });
+  return withRetry(() => _callGeminiPro(prompt, { signal }), {
+    maxRetries: 2,
+    backoff: 10000,
+    label: 'Gemini Pro',
+    signal,
+  });
 }
 
 // ── Google AI Studio ──
@@ -306,8 +428,18 @@ export async function callGeminiVideo(videoId, prompt, { signal } = {}) {
   const videoModel = keys.geminiVideoModel || CONFIG.DEFAULT_GEMINI_MODEL;
   if (window.electronAPI && window.electronAPI.callGeminiVideo) {
     const r = await _invokeElectronAbortable(
-      (requestId) => window.electronAPI.callGeminiVideo(videoId, prompt, videoModel, CONFIG.MAX_OUTPUT_TOKENS_SHORT, requestId),
-      (requestId) => window.electronAPI.cancelLLMRequest ? window.electronAPI.cancelLLMRequest(requestId) : Promise.resolve(),
+      (requestId) =>
+        window.electronAPI.callGeminiVideo(
+          videoId,
+          prompt,
+          videoModel,
+          CONFIG.MAX_OUTPUT_TOKENS_SHORT,
+          requestId
+        ),
+      (requestId) =>
+        window.electronAPI.cancelLLMRequest
+          ? window.electronAPI.cancelLLMRequest(requestId)
+          : Promise.resolve(),
       signal
     );
     if (r && r.cancelled) throw _toAbortError();
@@ -316,11 +448,35 @@ export async function callGeminiVideo(videoId, prompt, { signal } = {}) {
   }
   _warnWebFallback('Gemini Video');
   _assertRawKey('Gemini Video', gaiKey);
-  const r = await fetchWithTimeout('https://generativelanguage.googleapis.com/v1beta/models/' + videoModel + ':generateContent?key=' + gaiKey, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ parts: [{ fileData: { fileUri: 'https://www.youtube.com/watch?v=' + videoId, mimeType: 'video/*' } }, { text: prompt }] }], generationConfig: { maxOutputTokens: CONFIG.MAX_OUTPUT_TOKENS_SHORT } }),
-    signal,
-  }, 600000, signal);
+  const r = await fetchWithTimeout(
+    'https://generativelanguage.googleapis.com/v1beta/models/' +
+      videoModel +
+      ':generateContent?key=' +
+      gaiKey,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                fileData: {
+                  fileUri: 'https://www.youtube.com/watch?v=' + videoId,
+                  mimeType: 'video/*',
+                },
+              },
+              { text: prompt },
+            ],
+          },
+        ],
+        generationConfig: { maxOutputTokens: CONFIG.MAX_OUTPUT_TOKENS_SHORT },
+      }),
+      signal,
+    },
+    600000,
+    signal
+  );
   if (!r.ok) {
     try {
       const d = await r.json();
@@ -332,12 +488,17 @@ export async function callGeminiVideo(videoId, prompt, { signal } = {}) {
     }
   }
   const d = await r.json();
-  if (d.candidates && d.candidates[0] && d.candidates[0].content) return d.candidates[0].content.parts.map(p => p.text || '').join('');
+  if (d.candidates && d.candidates[0] && d.candidates[0].content)
+    return d.candidates[0].content.parts.map((p) => p.text || '').join('');
   throw new Error('Google AI Studio 응답 형식 오류');
 }
 
 // ── Google AI Studio 영상 분석 (스트리밍) ──
-export async function callGeminiVideoStream(videoId, prompt, { onChunk, onDone, onError, signal } = {}) {
+export async function callGeminiVideoStream(
+  videoId,
+  prompt,
+  { onChunk, onDone, onError, signal } = {}
+) {
   checkThrottle();
   const keys = getApiKeys();
   const gaiKey = getGeminiKey(keys);
@@ -370,7 +531,9 @@ export async function callGeminiVideoStream(videoId, prompt, { onChunk, onDone, 
       // ★ P0-2: 안전 타임아웃 — Main process 크래시 등으로 done/error 미수신 시 리스너 누수 방지
       // ★ P2-fix: TIMEOUT.ANALYSIS_VIDEO(10분)와 정책 통일 (기존 6분 → 11분, withTimeout보다 1분 여유)
       const safetyTimer = setTimeout(() => {
-        try { if (window.electronAPI.cancelLLMStream) window.electronAPI.cancelLLMStream(requestId); } catch (_) {}
+        try {
+          if (window.electronAPI.cancelLLMStream) window.electronAPI.cancelLLMStream(requestId);
+        } catch (_) {}
         cleanup();
         settleReject(new Error('영상 분석 스트리밍 타임아웃 (11분)'));
       }, 660000);
@@ -381,14 +544,26 @@ export async function callGeminiVideoStream(videoId, prompt, { onChunk, onDone, 
           fullText += chunk;
           if (onChunk) onChunk(chunk, fullText);
         },
-        onDone: (text) => { settleResolve(text); },
-        onError: (error) => { settleReject(new Error(error)); }
+        onDone: (text) => {
+          settleResolve(text);
+        },
+        onError: (error) => {
+          settleReject(new Error(error));
+        },
       });
-      const removeAbort = _attachStreamAbort(signal, requestId, cleanup, settleReject, () => { clearTimeout(safetyTimer); });
+      const removeAbort = _attachStreamAbort(signal, requestId, cleanup, settleReject, () => {
+        clearTimeout(safetyTimer);
+      });
 
       // ★ Fix A: invoke() 실패 시 6분 대기 대신 즉시 reject
       Promise.resolve(
-        window.electronAPI.callGeminiVideoStream(videoId, prompt, videoModel, CONFIG.MAX_OUTPUT_TOKENS_SHORT, requestId)
+        window.electronAPI.callGeminiVideoStream(
+          videoId,
+          prompt,
+          videoModel,
+          CONFIG.MAX_OUTPUT_TOKENS_SHORT,
+          requestId
+        )
       ).catch((err) => {
         cleanup();
         settleReject(err instanceof Error ? err : new Error(String(err)));
@@ -404,18 +579,42 @@ export async function callGeminiVideoStream(videoId, prompt, { onChunk, onDone, 
     if (!_gk) throw new Error('Google AI Studio API 키를 설정해주세요.');
     _assertRawKey('Gemini Video Stream', _gk);
     const _vm0 = _vk.geminiVideoModel || CONFIG.DEFAULT_GEMINI_MODEL;
-    const _vm = (_vm0 === 'gemini-2.0-flash' || _vm0 === 'gemini-2.0-flash-001' || _vm0 === 'gemini-2.5-flash') ? 'gemini-2.5-pro' : _vm0;
-    const _url = 'https://generativelanguage.googleapis.com/v1beta/models/' + _vm + ':generateContent?key=' + _gk;
-    const _body = JSON.stringify({ contents: [{ parts: [{ fileData: { fileUri: 'https://www.youtube.com/watch?v=' + videoId, mimeType: 'video/*' } }, { text: prompt }] }], generationConfig: { maxOutputTokens: CONFIG.MAX_OUTPUT_TOKENS_SHORT } });
+    const _vm =
+      _vm0 === 'gemini-2.0-flash' || _vm0 === 'gemini-2.0-flash-001' || _vm0 === 'gemini-2.5-flash'
+        ? 'gemini-2.5-pro'
+        : _vm0;
+    const _url =
+      'https://generativelanguage.googleapis.com/v1beta/models/' +
+      _vm +
+      ':generateContent?key=' +
+      _gk;
+    const _body = JSON.stringify({
+      contents: [
+        {
+          parts: [
+            {
+              fileData: {
+                fileUri: 'https://www.youtube.com/watch?v=' + videoId,
+                mimeType: 'video/*',
+              },
+            },
+            { text: prompt },
+          ],
+        },
+      ],
+      generationConfig: { maxOutputTokens: CONFIG.MAX_OUTPUT_TOKENS_SHORT },
+    });
 
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         if (attempt > 0) {
-          await new Promise(r => setTimeout(r, 3000));
+          await new Promise((r) => setTimeout(r, 3000));
         }
         const resp = await fetch(_url, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: _body, signal,
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: _body,
+          signal,
         });
         if (!resp.ok) {
           const errBody = await resp.text().catch(() => '');
@@ -423,7 +622,7 @@ export async function callGeminiVideoStream(videoId, prompt, { onChunk, onDone, 
         }
         const d = await resp.json();
         if (d.candidates && d.candidates[0] && d.candidates[0].content) {
-          const fullText = d.candidates[0].content.parts.map(p => p.text || '').join('');
+          const fullText = d.candidates[0].content.parts.map((p) => p.text || '').join('');
           if (onChunk) onChunk(fullText, fullText);
           if (onDone) onDone(fullText);
           return fullText;
@@ -431,7 +630,7 @@ export async function callGeminiVideoStream(videoId, prompt, { onChunk, onDone, 
         throw new Error('Gemini Video 응답 형식 오류');
       } catch (e) {
         console.warn('[Gemini Video] 시도 ' + (attempt + 1) + ' 실패:', e.message);
-        if (attempt >= 1) throw e;  // 2번째 실패 → 상위에서 텍스트 fallback
+        if (attempt >= 1) throw e; // 2번째 실패 → 상위에서 텍스트 fallback
       }
     }
   }
@@ -444,8 +643,16 @@ export async function callPerplexity(prompt, { signal } = {}) {
   if (!keys.perplexity) throw new Error('Perplexity API 키가 없습니다.');
   if (window.electronAPI && window.electronAPI.callPerplexity) {
     const r = await _invokeElectronAbortable(
-      (requestId) => window.electronAPI.callPerplexity(prompt.substring(0, CONFIG.MAX_PROMPT_CHARS), CONFIG.MAX_OUTPUT_TOKENS_SHORT, requestId),
-      (requestId) => window.electronAPI.cancelLLMRequest ? window.electronAPI.cancelLLMRequest(requestId) : Promise.resolve(),
+      (requestId) =>
+        window.electronAPI.callPerplexity(
+          prompt.substring(0, CONFIG.MAX_PROMPT_CHARS),
+          CONFIG.MAX_OUTPUT_TOKENS_SHORT,
+          requestId
+        ),
+      (requestId) =>
+        window.electronAPI.cancelLLMRequest
+          ? window.electronAPI.cancelLLMRequest(requestId)
+          : Promise.resolve(),
       signal
     );
     if (r && r.cancelled) throw _toAbortError();
@@ -454,15 +661,27 @@ export async function callPerplexity(prompt, { signal } = {}) {
   }
   _warnWebFallback('Perplexity');
   _assertRawKey('Perplexity', keys.perplexity);
-  const r = await fetchWithTimeout('https://api.perplexity.ai/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + keys.perplexity },
-    body: JSON.stringify({ model: 'sonar', messages: [{ role: 'user', content: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS) }], max_tokens: CONFIG.MAX_OUTPUT_TOKENS_SHORT }),
-    signal,
-  }, 300000, signal);
+  const r = await fetchWithTimeout(
+    'https://api.perplexity.ai/chat/completions',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + keys.perplexity },
+      body: JSON.stringify({
+        model: 'sonar',
+        messages: [{ role: 'user', content: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS) }],
+        max_tokens: CONFIG.MAX_OUTPUT_TOKENS_SHORT,
+      }),
+      signal,
+    },
+    300000,
+    signal
+  );
   if (r.status === 401) throw new Error('Perplexity API 키가 유효하지 않습니다.');
   if (r.status === 429) throw new Error('Perplexity 요청 한도 초과.');
-  if (!r.ok) { const d = await r.json(); throw new Error(d.error && d.error.message || 'Perplexity 오류: ' + r.status); }
+  if (!r.ok) {
+    const d = await r.json();
+    throw new Error((d.error && d.error.message) || 'Perplexity 오류: ' + r.status);
+  }
   const d = await r.json();
   if (d.choices && d.choices[0] && d.choices[0].message) return d.choices[0].message.content;
   throw new Error('Perplexity 응답 형식 오류');
@@ -514,7 +733,9 @@ export async function callLLMStream(prompt, { onChunk, onDone, onError, signal }
       // ★ P0-2: 안전 타임아웃 — Main process 크래시 등으로 done/error 미수신 시 리스너 누수 방지
       // ★ P2-fix: TIMEOUT.SCRIPT(10분)와 정책 통일 (기존 6분 → 11분)
       const safetyTimer = setTimeout(() => {
-        try { if (window.electronAPI.cancelLLMStream) window.electronAPI.cancelLLMStream(requestId); } catch (_) {}
+        try {
+          if (window.electronAPI.cancelLLMStream) window.electronAPI.cancelLLMStream(requestId);
+        } catch (_) {}
         cleanup();
         settleReject(new Error('LLM 스트리밍 타임아웃 (11분)'));
       }, 660000);
@@ -525,10 +746,16 @@ export async function callLLMStream(prompt, { onChunk, onDone, onError, signal }
           fullText += chunk;
           if (onChunk) onChunk(chunk, fullText);
         },
-        onDone: (text) => { settleResolve(text); },
-        onError: (error) => { settleReject(new Error(error)); }
+        onDone: (text) => {
+          settleResolve(text);
+        },
+        onError: (error) => {
+          settleReject(new Error(error));
+        },
       });
-      const removeAbort = _attachStreamAbort(signal, requestId, cleanup, settleReject, () => { clearTimeout(safetyTimer); });
+      const removeAbort = _attachStreamAbort(signal, requestId, cleanup, settleReject, () => {
+        clearTimeout(safetyTimer);
+      });
 
       // 프로바이더별 IPC 호출
       // ★ Fix A: invoke() 실패 시 6분 대기 대신 즉시 reject
@@ -540,13 +767,35 @@ export async function callLLMStream(prompt, { onChunk, onDone, onError, signal }
       };
 
       if (provider === 'gemini') {
-        if (!hasGeminiKey(keys)) { cleanup(); settleReject(new Error('Gemini / Google AI Studio API 키를 설정해주세요.')); return; }
-        _rejectOnInvokeError(window.electronAPI.callGeminiStream(prompt.substring(0, CONFIG.MAX_PROMPT_CHARS), CONFIG.DEFAULT_GEMINI_MODEL, CONFIG.MAX_OUTPUT_TOKENS, requestId));
+        if (!hasGeminiKey(keys)) {
+          cleanup();
+          settleReject(new Error('Gemini / Google AI Studio API 키를 설정해주세요.'));
+          return;
+        }
+        _rejectOnInvokeError(
+          window.electronAPI.callGeminiStream(
+            prompt.substring(0, CONFIG.MAX_PROMPT_CHARS),
+            CONFIG.DEFAULT_GEMINI_MODEL,
+            CONFIG.MAX_OUTPUT_TOKENS,
+            requestId
+          )
+        );
       } else {
         // Claude (기본값)
-        if (!keys.claude) { cleanup(); settleReject(new Error('Claude API 키를 설정해주세요.')); return; }
+        if (!keys.claude) {
+          cleanup();
+          settleReject(new Error('Claude API 키를 설정해주세요.'));
+          return;
+        }
         const claudeModel = keys.claudeModel || CONFIG.DEFAULT_CLAUDE_MODEL;
-        _rejectOnInvokeError(window.electronAPI.callClaudeStream(prompt.substring(0, CONFIG.MAX_PROMPT_CHARS), claudeModel, CONFIG.MAX_OUTPUT_TOKENS, requestId));
+        _rejectOnInvokeError(
+          window.electronAPI.callClaudeStream(
+            prompt.substring(0, CONFIG.MAX_PROMPT_CHARS),
+            claudeModel,
+            CONFIG.MAX_OUTPUT_TOKENS,
+            requestId
+          )
+        );
       }
     });
   }
@@ -557,15 +806,15 @@ export async function callLLMStream(prompt, { onChunk, onDone, onError, signal }
   const token = getToken();
 
   if (token && PROXY_BASE) {
-    let fullText = '';  // ★ v3.5.8: catch에서 부분 응답 확인을 위해 try 바깥으로 이동
+    let fullText = ''; // ★ v3.5.8: catch에서 부분 응답 확인을 위해 try 바깥으로 이동
     try {
       const resp = await fetch(PROXY_BASE + '/api/llm/stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
         body: JSON.stringify({
           prompt: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS),
           provider: provider === 'chatgpt' ? 'claude' : provider,
-          max_tokens: CONFIG.MAX_OUTPUT_TOKENS
+          max_tokens: CONFIG.MAX_OUTPUT_TOKENS,
         }),
         signal, // ★ P2-fix: 취소 signal 전달 (기존 누락)
       });
@@ -621,7 +870,14 @@ export async function callLLMStream(prompt, { onChunk, onDone, onError, signal }
       // - 임계값 이상: onDone만 호출 (성공 취급, console.warn으로 기록)
       // - 임계값 미만: non-streaming fallback으로 진행
       if (fullText && fullText.length > CONFIG.SSE_PARTIAL_THRESHOLD) {
-        console.warn('[LLM Stream] SSE failed after partial response (' + fullText.length + ' chars, threshold ' + CONFIG.SSE_PARTIAL_THRESHOLD + '), using partial:', e.message);
+        console.warn(
+          '[LLM Stream] SSE failed after partial response (' +
+            fullText.length +
+            ' chars, threshold ' +
+            CONFIG.SSE_PARTIAL_THRESHOLD +
+            '), using partial:',
+          e.message
+        );
         if (onDone) onDone(fullText);
         return fullText;
       }
@@ -639,14 +895,25 @@ export async function callLLMStream(prompt, { onChunk, onDone, onError, signal }
         const claudeModel = keys.claudeModel || CONFIG.DEFAULT_CLAUDE_MODEL;
         const resp = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': keys.claude, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-          body: JSON.stringify({ model: claudeModel, max_tokens: CONFIG.MAX_OUTPUT_TOKENS, stream: true, messages: [{ role: 'user', content: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS) }] }),
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': keys.claude,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true',
+          },
+          body: JSON.stringify({
+            model: claudeModel,
+            max_tokens: CONFIG.MAX_OUTPUT_TOKENS,
+            stream: true,
+            messages: [{ role: 'user', content: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS) }],
+          }),
           signal,
         });
         if (!resp.ok) throw new Error('Claude stream ' + resp.status);
         const reader = resp.body.getReader();
         const decoder = new TextDecoder();
-        let buffer = '', fullText = '';
+        let buffer = '',
+          fullText = '';
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -672,15 +939,26 @@ export async function callLLMStream(prompt, { onChunk, onDone, onError, signal }
       if (provider === 'gemini' && hasGeminiKey(keys)) {
         const geminiKey = getGeminiKey(keys);
         _assertRawKey('Gemini Stream', geminiKey);
-        const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + CONFIG.DEFAULT_GEMINI_MODEL + ':streamGenerateContent?alt=sse&key=' + geminiKey, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS) }] }], generationConfig: { maxOutputTokens: CONFIG.MAX_OUTPUT_TOKENS } }),
-          signal,
-        });
+        const resp = await fetch(
+          'https://generativelanguage.googleapis.com/v1beta/models/' +
+            CONFIG.DEFAULT_GEMINI_MODEL +
+            ':streamGenerateContent?alt=sse&key=' +
+            geminiKey,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt.substring(0, CONFIG.MAX_PROMPT_CHARS) }] }],
+              generationConfig: { maxOutputTokens: CONFIG.MAX_OUTPUT_TOKENS },
+            }),
+            signal,
+          }
+        );
         if (!resp.ok) throw new Error('Gemini stream ' + resp.status);
         const reader = resp.body.getReader();
         const decoder = new TextDecoder();
-        let buffer = '', fullText = '';
+        let buffer = '',
+          fullText = '';
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -693,8 +971,11 @@ export async function callLLMStream(prompt, { onChunk, onDone, onError, signal }
             try {
               const evt = JSON.parse(payload);
               if (evt.candidates && evt.candidates[0] && evt.candidates[0].content) {
-                const txt = evt.candidates[0].content.parts.map(p => p.text || '').join('');
-                if (txt) { fullText += txt; if (onChunk) onChunk(txt, fullText); }
+                const txt = evt.candidates[0].content.parts.map((p) => p.text || '').join('');
+                if (txt) {
+                  fullText += txt;
+                  if (onChunk) onChunk(txt, fullText);
+                }
               }
             } catch (_) {}
           }
@@ -703,7 +984,10 @@ export async function callLLMStream(prompt, { onChunk, onDone, onError, signal }
         return fullText;
       }
     } catch (e) {
-      console.warn('[LLM Stream] Browser direct stream failed, falling back to non-streaming:', e.message);
+      console.warn(
+        '[LLM Stream] Browser direct stream failed, falling back to non-streaming:',
+        e.message
+      );
     }
   }
 

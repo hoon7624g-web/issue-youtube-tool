@@ -21,5 +21,5 @@ export function cacheSet(key, data) {
 
 export function cacheClear(key) {
   if (key) delete _cache[key];
-  else Object.keys(_cache).forEach(k => delete _cache[k]);
+  else Object.keys(_cache).forEach((k) => delete _cache[k]);
 }

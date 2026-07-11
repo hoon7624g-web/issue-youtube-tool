@@ -36,12 +36,10 @@ export const SceneLabel = ({ label, startFrame }) => {
   });
 
   // 3초 후 페이드아웃
-  const fadeOutOpacity = interpolate(
-    relFrame,
-    [fps * 2.5, fps * 3],
-    [1, 0],
-    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
-  );
+  const fadeOutOpacity = interpolate(relFrame, [fps * 2.5, fps * 3], [1, 0], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
 
   const color = LABEL_COLORS[label] || '#6B7280';
 

@@ -7,7 +7,9 @@ const log = require('electron-log');
 const { httpsGet } = require('./http-helpers');
 
 async function ytApiFetch(endpoint, params, signal) {
-  const qs = Object.keys(params).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k])).join('&');
+  const qs = Object.keys(params)
+    .map((k) => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
+    .join('&');
   const url = 'https://www.googleapis.com/youtube/v3/' + endpoint + '?' + qs;
   const r = await httpsGet(url, {}, 15000, signal);
   if (r.cancelled) return { status: 499, data: {}, cancelled: true };
@@ -34,7 +36,18 @@ function registerYouTubeIPC(ipcMain, assertTrustedSender, asString, readEncrypte
       return { status: 400, data: { error: '잘못된 요청 형식입니다' } };
     }
     // 안전한 파라미터만 허용
-    const allowed = ['part', 'q', 'type', 'order', 'publishedAfter', 'maxResults', 'regionCode', 'relevanceLanguage', 'id', 'videoDuration'];
+    const allowed = [
+      'part',
+      'q',
+      'type',
+      'order',
+      'publishedAfter',
+      'maxResults',
+      'regionCode',
+      'relevanceLanguage',
+      'id',
+      'videoDuration',
+    ];
     const safe = {};
     for (const k of allowed) {
       if (typeof params[k] === 'string' || typeof params[k] === 'number') {
@@ -43,13 +56,18 @@ function registerYouTubeIPC(ipcMain, assertTrustedSender, asString, readEncrypte
     }
     // 키는 main process에서 주입
     const keys = readEncryptedKeys();
-    if (!keys.youtube) return { status: 400, data: { error: 'YouTube API 키가 설정되지 않았습니다' } };
+    if (!keys.youtube)
+      return { status: 400, data: { error: 'YouTube API 키가 설정되지 않았습니다' } };
     safe.key = keys.youtube;
 
     // ★ search 요청만 이전 요청 취소 (videos/channels은 병렬 호출이므로 취소하면 안 됨)
     let signal = null;
     if (endpoint === 'search') {
-      if (_activeYtAC) { try { _activeYtAC.abort(); } catch (_) {} }
+      if (_activeYtAC) {
+        try {
+          _activeYtAC.abort();
+        } catch (_) {}
+      }
       _activeYtAC = new AbortController();
       signal = _activeYtAC.signal;
     }

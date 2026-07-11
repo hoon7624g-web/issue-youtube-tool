@@ -1,45 +1,65 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://i.ytimg.com https://images.pexels.com blob: data:; media-src 'self' https: blob: data:; connect-src 'self' https://api.anthropic.com https://api.openai.com https://api.elevenlabs.io https://api.perplexity.ai https://api.pexels.com https://videos.pexels.com https://generativelanguage.googleapis.com https://texttospeech.googleapis.com https://www.googleapis.com https://www.youtube.com https://wotseowsskgobnusiacg.supabase.co https://script.google.com https://script.googleusercontent.com https://trends.google.com; object-src 'none'; base-uri 'none'; frame-src 'none'; form-action 'none';">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>유튜브도사 영상 제작 솔루션</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<!-- JSZip: preload.js에서 Electron require로 로드 -->
-<link rel="stylesheet" href="./css/main.css">
-</head>
-<body>
-<div class="app no-sb" id="app">
-  <header class="hdr">
-    <div class="hdr-l">
-      <div class="logo">
-        <div class="logo-icon"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABCGlDQ1BJQ0MgUHJvZmlsZQAAeJxjYGA8wQAELAYMDLl5JUVB7k4KEZFRCuwPGBiBEAwSk4sLGHADoKpv1yBqL+viUYcLcKakFicD6Q9ArFIEtBxopAiQLZIOYWuA2EkQtg2IXV5SUAJkB4DYRSFBzkB2CpCtkY7ETkJiJxcUgdT3ANk2uTmlyQh3M/Ck5oUGA2kOIJZhKGYIYnBncAL5H6IkfxEDg8VXBgbmCQixpJkMDNtbGRgkbiHEVBYwMPC3MDBsO48QQ4RJQWJRIliIBYiZ0tIYGD4tZ2DgjWRgEL7AwMAVDQsIHG5TALvNnSEfCNMZchhSgSKeDHkMyQx6QJYRgwGDIYMZAKbWPz9HbOBQAAAF30lEQVR42sWXXahdVxHHfzNr7XPPuR9JamxvctOkxtQoRfGrPohN1SIKthWhIEUrSC2xSFta8MmnWDCIoPgiaPFNlL60LwpifIgKorW0FITWoklNq5ZKG/Nx7r1nf6wZH9Y+J/vcc3Kb4EM3zNmcvdbMmjXz/8+aJf6pjzhv4RPdhLfUAfm/HNgavKu3FUlyZfrdtcTbv4qJoK6IOa4O4ohdjQOdyb6NA+LamScgiggENxwnKagJ4vMis50DHlqrHSWRTkA8D7mACqgiVUmqR5gZmhxBCUWEfg9CBHNwyxZaW1P2p1MwZ7eSN+HiOAruiCpsbpJqY7RnFT34DtLadTS9PnE4JJ75J3L6FPHsOcLiMl70wGpEZNuAdFIwDl/2wDvA8ODU54c07z4Md99F+PgnWFi9dgo2pSXkb6fY+NUJeOJJFs9nR0g+C9JxNEQQ/9ARnwWhZDw4IIlqoyJ9+W4WHjyKLC23mHDcHW3B5xon6s2Lf6U8/n0Gf36OsLIIZq2tmVgj/sFbfTzmW0AvCtV6SXrkAQZH7yEB2jSIgkicMAIE3HFLmBsSe6T1EZsPPsLKn55FFge4+cwamUcJJMH4ncVRFDs7pPrC5+kfvQeaRDBHQwSJmCUsGZ4MTw3uOQqqPbypiEt9Fu7/GskDND5njSxTGLgUGYXNmmr/DfQfvh/MsOAEEQwQNzSEiepY05KBCEGElBK691q834c6ZQb5XBBqx0w7IwRsuA4PfI54zS68aQgaMCHnU5Xyd0/jvziBXTyHHTxI8aXb6e2/gQZHTBENVE8/R//cJiwvQrKOq951QKZRKgJVolzZgdz20ZzbcV0YL/7Y49i3f0DfDEKBlScZPfkb6kcfYvDJW0ghUP/+j/DdHxFiAalb5bxTG0D88G0+UwTKivLAPuSXjxFXVnC3HHaNVKf/QX3HfSzVCXoFmGMa8XKdplT08DtJPUNePEMPg15EzC8Vly0siJ62cEMVqRx27ICVJcRARDDP+W/+8BeKsxdh1y68TC0REh4LegOwv58iCGjRI4mgjeGXPWSki4ExGRVMcBMKU6SlmXgerTUQGwFrBTAxQhNwHGkczPHgqIznSIeyTB0+KuZkIb+TgQZ44zzNcJhD5wnXbGRw5AP4/jUYNbnua0Ak4hsjytoZ3fxeyo+9j9KFtFEjLkzW2EpDnwFhC8TQQ195HT/9Cvb+92TngoA58cAam2ur6AsvI8sD1JxUNZQ33Yh872EGR27GgfqZ56m//ijx5f/AQi+zZysLRAjHVt51DBcmYpJ3dm7IaHU3xa0fnjDBVUjDTUZNwu+9k+bAPvzAPuovfpr+8Yfo33QIrMGaRHH9Huo9q8gTJ9GiBwZT67Qivuczs+VBFeqK9d27KX77Y+J1O9FkWBRIoEHn9iuSDBPB3FAg/esN5MhXiaMKgs49khVvtZ3spQGNQVygf+Y1ym/+kEYEQ9DkeBBSY5BSLi6tiDuE3KRocjQE0kv/xi6s5w2ZM7VWK9GTtumYLpVuAruWGfz816xfv5elb92bM1gnRAVC2BICzyU7GdKLVP+9iB37CQtJwUN2YM6jYzq5dXPTMqJydHmF4js/Zf2+4zSvvo4WYZICd8/n/bjQaO6M6qeep/7sNyieegFZGOCN40ZHZCLi19zu2zWhLiCipPMX2Di0RvzKnchdtxAOreEhEMfZ29ikefYU9c9OUDx+kt6oQpYW0GTbNrviO++YdaDTsUw+qeKjinpUkt62A25cQ/a+HV/sIxeGyOnXkJdeJWxWsHORgJAwwph8c3rO7MDyPAdmT2h3x1QgCKFsoKrz8YvgONqLeL9AyPXCUXK7ajMFsGt3AsKZppS2sR2f9TquZIJpAYOYF2t/cXIZdsfbFj1/zkST7mZsqi3nshmYQmvn0JKpUHkLlE6f18jMHeMyXTlR2gg4Pt7Lm1yNZHIzkqkbzaUy65ficiU3o/El5M0UZEuapOPXdFNzNTfE2M3HlSsqjs/V2+66Om/sf+G8/l/ir2tSAAAAAElFTkSuQmCC" width="32" height="32" style="border-radius:8px"></div>
-        <span class="logo-text">유튜브도사 영상 제작 솔루션</span>
-        <span class="logo-ver">v3.6.2</span>
-      </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://i.ytimg.com https://images.pexels.com blob: data:; media-src 'self' https: blob: data:; connect-src 'self' https://api.anthropic.com https://api.openai.com https://api.elevenlabs.io https://api.perplexity.ai https://api.pexels.com https://videos.pexels.com https://generativelanguage.googleapis.com https://texttospeech.googleapis.com https://www.googleapis.com https://www.youtube.com https://wotseowsskgobnusiacg.supabase.co https://script.google.com https://script.googleusercontent.com https://trends.google.com; object-src 'none'; base-uri 'none'; frame-src 'none'; form-action 'none';"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>유튜브도사 영상 제작 솔루션</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <!-- JSZip: preload.js에서 Electron require로 로드 -->
+    <link rel="stylesheet" href="./css/main.css" />
+  </head>
+  <body>
+    <div class="app no-sb" id="app">
+      <header class="hdr">
+        <div class="hdr-l">
+          <div class="logo">
+            <div class="logo-icon">
+              <img
+                src="data:image/png;base64,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"
+                width="32"
+                height="32"
+                style="border-radius: 8px"
+              />
+            </div>
+            <span class="logo-text">유튜브도사 영상 제작 솔루션</span>
+            <span class="logo-ver">v3.6.2</span>
+          </div>
+        </div>
+        <div class="hdr-r">
+          <span id="apiBadges" style="display: inline-flex; gap: 4px"></span>
+          <span class="hdr-user" id="uName"></span>
+          <button
+            class="theme-toggle"
+            id="themeToggle"
+            title="다크/라이트 모드"
+            aria-label="다크/라이트 모드 전환"
+          ></button>
+          <button class="hdr-link" id="logoutBtn" aria-label="로그아웃">로그아웃</button>
+        </div>
+      </header>
+      <nav class="side" id="sidebar" style="display: none" aria-label="작업 단계 메뉴">
+        <div class="side-top">
+          <div class="side-progress" role="progressbar" aria-label="전체 진행률">
+            <div class="side-prog-bar">
+              <div class="side-prog-fill" id="progFill" style="width: 0%"></div>
+            </div>
+            <span class="side-prog-text" id="progText">0/9</span>
+          </div>
+          <div class="side-status" id="progStatus">키워드를 선택해주세요</div>
+        </div>
+        <div class="side-nav" id="sideNav"></div>
+      </nav>
+      <main class="mn" id="main" role="main" aria-label="작업 영역"></main>
     </div>
-    <div class="hdr-r">
-      <span id="apiBadges" style="display:inline-flex;gap:4px"></span>
-      <span class="hdr-user" id="uName"></span>
-      <button class="theme-toggle" id="themeToggle" title="다크/라이트 모드" aria-label="다크/라이트 모드 전환"></button>
-      <button class="hdr-link" id="logoutBtn" aria-label="로그아웃">로그아웃</button>
-    </div>
-  </header>
-  <nav class="side" id="sidebar" style="display:none" aria-label="작업 단계 메뉴">
-    <div class="side-top">
-      <div class="side-progress" role="progressbar" aria-label="전체 진행률">
-        <div class="side-prog-bar"><div class="side-prog-fill" id="progFill" style="width:0%"></div></div>
-        <span class="side-prog-text" id="progText">0/9</span>
-      </div>
-      <div class="side-status" id="progStatus">키워드를 선택해주세요</div>
-    </div>
-    <div class="side-nav" id="sideNav"></div>
-  </nav>
-  <main class="mn" id="main" role="main" aria-label="작업 영역"></main>
-</div>
-<div class="tw" id="tw"></div>
+    <div class="tw" id="tw"></div>
 
-<script type="module" src="js/app.js"></script>
-</body>
+    <script type="module" src="js/app.js"></script>
+  </body>
 </html>

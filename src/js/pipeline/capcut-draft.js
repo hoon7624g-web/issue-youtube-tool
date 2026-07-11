@@ -12,14 +12,16 @@ function uuid() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID().replace(/-/g, '');
   }
-  return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, c => {
-    const r = Math.random() * 16 | 0;
-    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
   });
 }
 
 // ── 시간 변환 유틸 ──
-function secToUs(sec) { return Math.round(sec * SEC); }
+function secToUs(sec) {
+  return Math.round(sec * SEC);
+}
 
 function parseCutDuration(cutStr) {
   // "2-3초" → 평균 2.5초, "3초" → 3초, "2~4초" → 3초
@@ -46,7 +48,7 @@ function defaultClip() {
     flip: { horizontal: false, vertical: false },
     rotation: 0.0,
     scale: { x: 1.0, y: 1.0 },
-    transform: { x: 0.0, y: 0.0 }
+    transform: { x: 0.0, y: 0.0 },
   };
 }
 
@@ -83,10 +85,14 @@ function createVideoMaterial({ id, name, path, duration, width, height, type = '
     category_name: 'local',
     check_flag: 63487,
     crop: {
-      upper_left_x: 0.0, upper_left_y: 0.0,
-      upper_right_x: 1.0, upper_right_y: 0.0,
-      lower_left_x: 0.0, lower_left_y: 1.0,
-      lower_right_x: 1.0, lower_right_y: 1.0,
+      upper_left_x: 0.0,
+      upper_left_y: 0.0,
+      upper_right_x: 1.0,
+      upper_right_y: 0.0,
+      lower_left_x: 0.0,
+      lower_left_y: 1.0,
+      lower_right_x: 1.0,
+      lower_right_y: 1.0,
     },
     crop_ratio: 'free',
     crop_scale: 1.0,
@@ -98,7 +104,7 @@ function createVideoMaterial({ id, name, path, duration, width, height, type = '
     material_name: name,
     media_path: '',
     path,
-    type,   // "video" | "photo"
+    type, // "video" | "photo"
     width,
   };
 }
@@ -130,28 +136,41 @@ function createAudioMaterial({ id, name, path, duration }) {
 // ═══════════════════════════════════════
 // 텍스트 소재(Material) 생성 — 자막용
 // ═══════════════════════════════════════
-function createTextMaterial({ id, text, fontSize = 8.0, color = [1.0, 1.0, 1.0], bold = true, hasBorder = true }) {
+function createTextMaterial({
+  id,
+  text,
+  fontSize = 8.0,
+  color = [1.0, 1.0, 1.0],
+  bold = true,
+  hasBorder = true,
+}) {
   const contentJson = {
-    styles: [{
-      fill: {
-        alpha: 1.0,
-        content: {
-          render_type: 'solid',
-          solid: { alpha: 1.0, color },
+    styles: [
+      {
+        fill: {
+          alpha: 1.0,
+          content: {
+            render_type: 'solid',
+            solid: { alpha: 1.0, color },
+          },
         },
+        range: [0, text.length],
+        size: fontSize,
+        bold,
+        italic: false,
+        underline: false,
+        strokes: hasBorder
+          ? [
+              {
+                content: {
+                  solid: { alpha: 1.0, color: [0.0, 0.0, 0.0] },
+                },
+                width: 0.08,
+              },
+            ]
+          : [],
       },
-      range: [0, text.length],
-      size: fontSize,
-      bold,
-      italic: false,
-      underline: false,
-      strokes: hasBorder ? [{
-        content: {
-          solid: { alpha: 1.0, color: [0.0, 0.0, 0.0] },
-        },
-        width: 0.08,
-      }] : [],
-    }],
+    ],
     text,
   };
 
@@ -193,7 +212,7 @@ function createVideoSegment({ materialId, sourceTimerange, targetTimerange, spee
     ...baseSegmentFields(segId, materialId, targetTimerange),
     source_timerange: sourceTimerange,
     speed: 1.0,
-    volume: 0.0,      // 비디오 자체 소리는 뮤트 (TTS 사용)
+    volume: 0.0, // 비디오 자체 소리는 뮤트 (TTS 사용)
     extra_material_refs: [speedId],
     clip: defaultClip(),
     hdr_settings: { intensity: 1.0, mode: 1, nits: 1000 },
@@ -205,7 +224,13 @@ function createVideoSegment({ materialId, sourceTimerange, targetTimerange, spee
 // ═══════════════════════════════════════
 // 오디오 Segment 생성
 // ═══════════════════════════════════════
-function createAudioSegment({ materialId, sourceTimerange, targetTimerange, speedId, volume = 1.0 }) {
+function createAudioSegment({
+  materialId,
+  sourceTimerange,
+  targetTimerange,
+  speedId,
+  volume = 1.0,
+}) {
   const segId = uuid();
   return {
     ...baseSegmentFields(segId, materialId, targetTimerange),
@@ -234,7 +259,7 @@ function createTextSegment({ materialId, targetTimerange }) {
       extra_material_refs: [speedId],
       clip: {
         ...defaultClip(),
-        transform: { x: 0.0, y: 0.8 },  // 화면 하단에 배치
+        transform: { x: 0.0, y: 0.8 }, // 화면 하단에 배치
       },
       uniform_scale: { on: true, value: 1.0 },
       render_index: 15000,
@@ -253,7 +278,7 @@ function createTrack({ type, name = '', segments, renderIndex = 0, mute = false 
     id: uuid(),
     is_default_name: name.length === 0,
     name,
-    segments: segments.map(seg => ({ ...seg, render_index: renderIndex })),
+    segments: segments.map((seg) => ({ ...seg, render_index: renderIndex })),
     type,
   };
 }
@@ -263,21 +288,53 @@ function createTrack({ type, name = '', segments, renderIndex = 0, mute = false 
 // ═══════════════════════════════════════
 function emptyMaterials() {
   return {
-    ai_translates: [], audio_balances: [], audio_effects: [],
-    audio_fades: [], audio_track_indexes: [], audios: [],
-    beats: [], canvases: [], chromas: [], color_curves: [],
-    common_mask: [], digital_human_model_dressing: [],
-    digital_humans: [], drafts: [], effects: [], flowers: [],
-    green_screens: [], handwrites: [], hsl: [], images: [],
-    log_color_wheels: [], loudnesses: [], manual_beautys: [],
-    manual_deformations: [], material_animations: [],
-    material_colors: [], multi_language_refs: [],
-    placeholder_infos: [], placeholders: [], plugin_effects: [],
-    primary_color_wheels: [], realtime_denoises: [], shapes: [],
-    smart_crops: [], smart_relights: [], sound_channel_mappings: [],
-    speeds: [], stickers: [], tail_leaders: [], text_templates: [],
-    texts: [], time_marks: [], transitions: [], video_effects: [],
-    video_trackings: [], videos: [], vocal_beautifys: [],
+    ai_translates: [],
+    audio_balances: [],
+    audio_effects: [],
+    audio_fades: [],
+    audio_track_indexes: [],
+    audios: [],
+    beats: [],
+    canvases: [],
+    chromas: [],
+    color_curves: [],
+    common_mask: [],
+    digital_human_model_dressing: [],
+    digital_humans: [],
+    drafts: [],
+    effects: [],
+    flowers: [],
+    green_screens: [],
+    handwrites: [],
+    hsl: [],
+    images: [],
+    log_color_wheels: [],
+    loudnesses: [],
+    manual_beautys: [],
+    manual_deformations: [],
+    material_animations: [],
+    material_colors: [],
+    multi_language_refs: [],
+    placeholder_infos: [],
+    placeholders: [],
+    plugin_effects: [],
+    primary_color_wheels: [],
+    realtime_denoises: [],
+    shapes: [],
+    smart_crops: [],
+    smart_relights: [],
+    sound_channel_mappings: [],
+    speeds: [],
+    stickers: [],
+    tail_leaders: [],
+    text_templates: [],
+    texts: [],
+    time_marks: [],
+    transitions: [],
+    video_effects: [],
+    video_trackings: [],
+    videos: [],
+    vocal_beautifys: [],
     vocal_separations: [],
   };
 }
@@ -293,7 +350,7 @@ function formatSrtTime(us) {
   const totalMin = Math.floor(totalSec / 60);
   const m = totalMin % 60;
   const h = Math.floor(totalMin / 60);
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(ms).padStart(3, '0')}`;
 }
 
 /**
@@ -302,11 +359,13 @@ function formatSrtTime(us) {
  * @returns {string} SRT 파일 내용
  */
 export function generateSRT(subtitles) {
-  return subtitles.map((sub, i) => {
-    const start = formatSrtTime(sub.startUs);
-    const end = formatSrtTime(sub.startUs + sub.durationUs);
-    return `${i + 1}\n${start} --> ${end}\n${sub.text}\n`;
-  }).join('\n');
+  return subtitles
+    .map((sub, i) => {
+      const start = formatSrtTime(sub.startUs);
+      const end = formatSrtTime(sub.startUs + sub.durationUs);
+      return `${i + 1}\n${start} --> ${end}\n${sub.text}\n`;
+    })
+    .join('\n');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -380,48 +439,54 @@ export function generateCapcutDraft(options) {
 
       const ftDurationUs = ft.durationMs ? ft.durationMs * 1000 : scene.durationUs;
 
-      materials.videos.push(createVideoMaterial({
-        id: matId,
-        name: ft.filePath ? ft.filePath.split(/[/\\]/).pop() : `scene_${i + 1}`,
-        path: ft.filePath || '',
-        duration: ftDurationUs,
-        width: ft.width || width,
-        height: ft.height || height,
-        type: 'video',
-      }));
+      materials.videos.push(
+        createVideoMaterial({
+          id: matId,
+          name: ft.filePath ? ft.filePath.split(/[/\\]/).pop() : `scene_${i + 1}`,
+          path: ft.filePath || '',
+          duration: ftDurationUs,
+          width: ft.width || width,
+          height: ft.height || height,
+          type: 'video',
+        })
+      );
       materials.speeds.push(createSpeed(speedId));
 
       const srcDur = Math.min(ftDurationUs, scene.durationUs);
-      videoSegments.push(createVideoSegment({
-        materialId: matId,
-        sourceTimerange: timerange(0, srcDur),
-        targetTimerange: timerange(videoCursor, scene.durationUs),
-        speedId,
-      }));
+      videoSegments.push(
+        createVideoSegment({
+          materialId: matId,
+          sourceTimerange: timerange(0, srcDur),
+          targetTimerange: timerange(videoCursor, scene.durationUs),
+          speedId,
+        })
+      );
       videoCursor += scene.durationUs;
     }
 
-    tracks.push(createTrack({
-      type: 'video',
-      segments: videoSegments,
-      renderIndex: 0,
-    }));
+    tracks.push(
+      createTrack({
+        type: 'video',
+        segments: videoSegments,
+        renderIndex: 0,
+      })
+    );
   }
 
   // ── 2) 오디오 트랙 (TTS 음성) ──
   if (voice && voice.filePath) {
     const audioMatId = uuid();
     const audioSpeedId = uuid();
-    const audioDurationUs = voice.durationMs
-      ? voice.durationMs * 1000
-      : totalDuration;
+    const audioDurationUs = voice.durationMs ? voice.durationMs * 1000 : totalDuration;
 
-    materials.audios.push(createAudioMaterial({
-      id: audioMatId,
-      name: voice.filePath.split(/[/\\]/).pop() || 'voice.mp3',
-      path: voice.filePath,
-      duration: audioDurationUs,
-    }));
+    materials.audios.push(
+      createAudioMaterial({
+        id: audioMatId,
+        name: voice.filePath.split(/[/\\]/).pop() || 'voice.mp3',
+        path: voice.filePath,
+        duration: audioDurationUs,
+      })
+    );
     materials.speeds.push(createSpeed(audioSpeedId));
 
     const audioSeg = createAudioSegment({
@@ -431,11 +496,13 @@ export function generateCapcutDraft(options) {
       speedId: audioSpeedId,
     });
 
-    tracks.push(createTrack({
-      type: 'audio',
-      segments: [audioSeg],
-      renderIndex: 0,
-    }));
+    tracks.push(
+      createTrack({
+        type: 'audio',
+        segments: [audioSeg],
+        renderIndex: 0,
+      })
+    );
   }
 
   // ── 3) 텍스트(자막) 트랙 ──
@@ -464,15 +531,15 @@ export function generateCapcutDraft(options) {
       for (let li = 0; li < lineCount; li++) {
         const matId = uuid();
         const tStart = scene.startUs + li * lineDur;
-        const tDur = li === lineCount - 1
-          ? scene.durationUs - li * lineDur
-          : lineDur;
+        const tDur = li === lineCount - 1 ? scene.durationUs - li * lineDur : lineDur;
 
-        materials.texts.push(createTextMaterial({
-          id: matId,
-          text: lines[li],
-          ...subStyle,
-        }));
+        materials.texts.push(
+          createTextMaterial({
+            id: matId,
+            text: lines[li],
+            ...subStyle,
+          })
+        );
 
         const { segment, speed } = createTextSegment({
           materialId: matId,
@@ -489,11 +556,13 @@ export function generateCapcutDraft(options) {
       }
     }
 
-    tracks.push(createTrack({
-      type: 'text',
-      segments: textSegments,
-      renderIndex: 15000,
-    }));
+    tracks.push(
+      createTrack({
+        type: 'text',
+        segments: textSegments,
+        renderIndex: 15000,
+      })
+    );
 
     // SRT 생성
     var srtContent = generateSRT(subtitleEntries);
@@ -547,8 +616,14 @@ export function generateCapcutDraft(options) {
     is_drop_frame_timecode: false,
     keyframe_graph_list: [],
     keyframes: {
-      adjusts: [], audios: [], effects: [], filters: [],
-      handwrites: [], stickers: [], texts: [], videos: [],
+      adjusts: [],
+      audios: [],
+      effects: [],
+      filters: [],
+      handwrites: [],
+      stickers: [],
+      texts: [],
+      videos: [],
     },
     last_modified_platform: {
       app_id: 359289,
@@ -637,7 +712,7 @@ export function generateCapcutDraft(options) {
     draftContent: JSON.stringify(draftContent, null, 2),
     draftMeta: JSON.stringify(draftMeta, null, 2),
     srt: srtContent || '',
-    sceneTiming,     // 디버깅/표시용
+    sceneTiming, // 디버깅/표시용
     totalDurationMs: Math.round(totalDuration / 1000),
   };
 }
@@ -648,7 +723,7 @@ function splitSubtitleText(text, maxCharsPerLine) {
 
   const lines = [];
   // 문장 구분자 기준 분할 시도
-  const sentences = text.split(/(?<=[.!?。！？,，~\s])/g).filter(s => s.trim());
+  const sentences = text.split(/(?<=[.!?。！？,，~\s])/g).filter((s) => s.trim());
 
   let current = '';
   for (const sent of sentences) {
@@ -700,19 +775,20 @@ export function extractFromPipelineState(S, result) {
   if (result && result.voiceResult) {
     const vr = result.voiceResult;
     voice = {
-      filePath: '',  // ZIP 추출 후 사용자가 설정
+      filePath: '', // ZIP 추출 후 사용자가 설정
       durationMs: vr.durationMs || null,
     };
   }
 
   // 프로젝트 이름
-  const title = result && result.script && result.script.title
-    ? result.script.title
-    : (S.keywords && S.keywords.selected) || '유튜브도사 프로젝트';
+  const title =
+    result && result.script && result.script.title
+      ? result.script.title
+      : (S.keywords && S.keywords.selected) || '유튜브도사 프로젝트';
 
   // 포맷 판별
   const scriptType = result && result.script && result.script.type;
-  const format = (scriptType === 'shorts' || scriptType === 'shorts_only') ? 'shorts' : 'longform';
+  const format = scriptType === 'shorts' || scriptType === 'shorts_only' ? 'shorts' : 'longform';
 
   return {
     projectName: title,

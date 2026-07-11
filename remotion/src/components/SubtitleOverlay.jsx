@@ -17,9 +17,7 @@ export const SubtitleOverlay = ({ subtitles }) => {
 
   // 현재 프레임에 해당하는 자막 찾기
   const currentTimeMs = (frame / fps) * 1000;
-  const activeSub = subtitles.find(
-    (s) => currentTimeMs >= s.start && currentTimeMs < s.end
-  );
+  const activeSub = subtitles.find((s) => currentTimeMs >= s.start && currentTimeMs < s.end);
 
   if (!activeSub) return null;
 
@@ -74,8 +72,7 @@ export const SubtitleOverlay = ({ subtitles }) => {
       >
         <span
           style={{
-            fontFamily:
-              '"Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif',
+            fontFamily: '"Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif',
             fontSize: 52,
             fontWeight: 800,
             color: '#FFFFFF',

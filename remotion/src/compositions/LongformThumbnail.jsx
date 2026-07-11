@@ -20,7 +20,8 @@ const STYLES = {
     textColor: '#FFFFFF',
     strokeColor: '#000000',
     strokeWidth: 6,
-    overlayGradient: 'linear-gradient(135deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.6) 100%)',
+    overlayGradient:
+      'linear-gradient(135deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.6) 100%)',
     accentBarHeight: 8,
     textAlign: 'left',
     textX: 60,
@@ -33,7 +34,8 @@ const STYLES = {
     textColor: '#FFFFFF',
     strokeColor: 'transparent',
     strokeWidth: 0,
-    overlayGradient: 'linear-gradient(0deg, rgba(180,20,20,0.92) 0%, rgba(180,20,20,0.85) 35%, transparent 65%)',
+    overlayGradient:
+      'linear-gradient(0deg, rgba(180,20,20,0.92) 0%, rgba(180,20,20,0.85) 35%, transparent 65%)',
     accentBarHeight: 0,
     textAlign: 'left',
     textX: 60,
@@ -141,16 +143,16 @@ export const LongformThumbnail = ({
           <div
             key={i}
             style={{
-              fontFamily: '"Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif',
+              fontFamily:
+                '"Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif',
               fontSize: preset.fontSize,
               fontWeight: preset.fontWeight,
               lineHeight: preset.lineHeight,
               color: preset.textColor,
               textAlign: preset.textAlign,
               // 텍스트 윤곽선
-              WebkitTextStroke: preset.strokeWidth > 0
-                ? `${preset.strokeWidth}px ${preset.strokeColor}`
-                : 'none',
+              WebkitTextStroke:
+                preset.strokeWidth > 0 ? `${preset.strokeWidth}px ${preset.strokeColor}` : 'none',
               paintOrder: 'stroke fill',
               // 그림자
               textShadow: '4px 4px 12px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.5)',

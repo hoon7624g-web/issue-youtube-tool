@@ -2,7 +2,17 @@
 // pipeline/step7-factcheck.js — 배치 팩트 검증 (페이지네이션)
 // v3.6.0 — build fix: previewText 멀티라인 문자열 파싱 오류 수정
 // ═══════════════════════════════════════
-import { $, toast, withTimeout, friendlyError, TIMEOUT, createProgress, el, confirmModal, mergeAbortSignals } from '../utils.js';
+import {
+  $,
+  toast,
+  withTimeout,
+  friendlyError,
+  TIMEOUT,
+  createProgress,
+  el,
+  confirmModal,
+  mergeAbortSignals,
+} from '../utils.js';
 import { S, sSet, sNext, sPrev, sOn } from '../state.js';
 import { K } from '../constants.js';
 import { Api } from '../api.js';
@@ -22,7 +32,9 @@ sOn(K.NAV_STEP, (step) => {
   if (step !== 7) {
     _fcRunId++;
     _fcJobRunning = false;
-    try { _fcLeaveAC.abort(new Error('step-leave')); } catch (e) {}
+    try {
+      _fcLeaveAC.abort(new Error('step-leave'));
+    } catch (e) {}
     _fcLeaveAC = new AbortController();
   }
   if (step <= 2) {
@@ -39,7 +51,12 @@ function escapeRegExp(text) {
 }
 
 function isValidResult(r) {
-  return !!(r && r.script && typeof r.script.content === 'string' && typeof r.script.type === 'string');
+  return !!(
+    r &&
+    r.script &&
+    typeof r.script.content === 'string' &&
+    typeof r.script.type === 'string'
+  );
 }
 
 function getResultArray() {
@@ -69,14 +86,21 @@ function rAllFC() {
   if (!results.length) {
     _fcPage = 0;
     root.appendChild(el('h2', { className: 'pt', textContent: '팩트 검증 결과' }));
-    root.appendChild(el('div', { className: 'cd', textContent: '팩트체크 결과를 표시할 스크립트가 없습니다.' }));
+    root.appendChild(
+      el('div', { className: 'cd', textContent: '팩트체크 결과를 표시할 스크립트가 없습니다.' })
+    );
     return;
   }
 
   if (!results.every(isValidResult)) {
     _fcPage = 0;
     root.appendChild(el('h2', { className: 'pt', textContent: '팩트 검증 결과' }));
-    root.appendChild(el('div', { className: 'cd', textContent: '팩트체크 결과 데이터가 손상되었습니다. 이전 단계부터 다시 진행해주세요.' }));
+    root.appendChild(
+      el('div', {
+        className: 'cd',
+        textContent: '팩트체크 결과 데이터가 손상되었습니다. 이전 단계부터 다시 진행해주세요.',
+      })
+    );
     return;
   }
 
@@ -85,14 +109,21 @@ function rAllFC() {
   const page = Math.max(0, Math.min(_fcPage, results.length - 1));
   _fcPage = page;
   const r = results[page];
-  const typeLabel = r.script.type === 'longform' ? '🎬 롱폼' : '📱 숏폼 ' + ((r.script.idx || 0) + 1);
+  const typeLabel =
+    r.script.type === 'longform' ? '🎬 롱폼' : '📱 숏폼 ' + ((r.script.idx || 0) + 1);
   const typeColor = r.script.type === 'longform' ? '#2563EB' : '#DC2626';
   const fcs = r.fcs || [];
   const lb = { safe: '안전', warning: '주의', uncertain: '미확인' };
   const bc = { safe: 'bg2', warning: 'by', uncertain: 'br' };
 
   root.appendChild(el('h2', { className: 'pt', textContent: '팩트 검증 결과' }));
-  root.appendChild(el('p', { className: 'pd', textContent: results.length + '개 스크립트 · ' + (page + 1) + '/' + results.length + ' 페이지' }));
+  root.appendChild(
+    el('p', {
+      className: 'pd',
+      textContent:
+        results.length + '개 스크립트 · ' + (page + 1) + '/' + results.length + ' 페이지',
+    })
+  );
   root.appendChild(
     el('div', {
       style: 'font-size:11px;color:var(--t4);margin:-16px 0 16px',
@@ -102,12 +133,15 @@ function rAllFC() {
         '회 호출 완료 · 대본 일부가 AI 서비스' +
         (r.factCheckedBy === 'perplexity' ? '(Perplexity)' : '') +
         '에 전송되어 검증되었습니다',
-    }),
+    })
   );
 
   root.appendChild(_fcBuildTabs(results, page));
 
-  const card = el('div', { className: 'cd cd-bar-green', style: 'border-left:4px solid ' + typeColor });
+  const card = el('div', {
+    className: 'cd cd-bar-green',
+    style: 'border-left:4px solid ' + typeColor,
+  });
   const hdr = el('div', { className: 'fx-row mb-16' });
 
   hdr.appendChild(
@@ -119,10 +153,12 @@ function rAllFC() {
         typeColor +
         '12;padding:3px 8px;border-radius:4px',
       textContent: typeLabel,
-    }),
+    })
   );
   hdr.appendChild(el('span', { className: 't-title', textContent: r.script.title || '' }));
-  hdr.appendChild(el('span', { className: 'bdg bg2 t-3xs ml-auto', textContent: '팩트체크 ' + fcs.length + '건' }));
+  hdr.appendChild(
+    el('span', { className: 'bdg bg2 t-3xs ml-auto', textContent: '팩트체크 ' + fcs.length + '건' })
+  );
 
   const checkedBy = S.script.factCheckedBy || 'llm';
   if (checkedBy === 'perplexity') {
@@ -131,27 +167,31 @@ function rAllFC() {
         style:
           'font-size:10px;font-weight:600;color:#06B6D4;background:rgba(6,182,212,.1);padding:3px 8px;border-radius:4px',
         textContent: '🌐 Perplexity 실시간 검증',
-      }),
+      })
     );
   } else {
     hdr.appendChild(
       el('span', {
-        style: 'font-size:10px;font-weight:600;color:var(--t3);background:var(--bg2);padding:3px 8px;border-radius:4px',
+        style:
+          'font-size:10px;font-weight:600;color:var(--t3);background:var(--bg2);padding:3px 8px;border-radius:4px',
         textContent: '🤖 AI 일반 검증',
-      }),
+      })
     );
   }
 
   card.appendChild(hdr);
 
-  const filterBar = el('div', { style: 'display:flex;align-items:center;gap:12px;margin-bottom:12px' });
+  const filterBar = el('div', {
+    style: 'display:flex;align-items:center;gap:12px;margin-bottom:12px',
+  });
   const safeCount = fcs.filter((f) => f.st === 'safe').length;
   const issueCount = fcs.length - safeCount;
   filterBar.appendChild(
     el('span', {
       className: 't-xs-t3',
-      textContent: '전체 ' + fcs.length + '건 (주의/미확인 ' + issueCount + '건, 안전 ' + safeCount + '건)',
-    }),
+      textContent:
+        '전체 ' + fcs.length + '건 (주의/미확인 ' + issueCount + '건, 안전 ' + safeCount + '건)',
+    })
   );
 
   let _hideSafe = false;
@@ -184,7 +224,7 @@ function rAllFC() {
       el('span', {
         style: 'font-size:12px;color:#2563EB;flex:1',
         textContent: '마지막 삭제를 되돌릴 수 있습니다 (' + _undoStack.length + '건)',
-      }),
+      })
     );
 
     const undoBtn = el('button', {
@@ -213,16 +253,33 @@ function rAllFC() {
   if (fcs.length) {
     fcs.forEach((f, fi) => {
       const row = el('div', {
-        style: 'display:flex;align-items:flex-start;gap:10px;padding:12px 14px;margin-bottom:6px;background:var(--bg);border-radius:var(--r)',
+        style:
+          'display:flex;align-items:flex-start;gap:10px;padding:12px 14px;margin-bottom:6px;background:var(--bg);border-radius:var(--r)',
       });
       row.dataset.fcSt = f.st || '';
 
       const info = el('div', { className: 'flex-1' });
-      info.appendChild(el('div', { style: 'font-size:14px;line-height:1.6;font-weight:500', textContent: f.text || '' }));
-      info.appendChild(el('div', { style: 'font-size:12px;color:var(--t3);margin-top:4px', textContent: f.note || '' }));
+      info.appendChild(
+        el('div', {
+          style: 'font-size:14px;line-height:1.6;font-weight:500',
+          textContent: f.text || '',
+        })
+      );
+      info.appendChild(
+        el('div', {
+          style: 'font-size:12px;color:var(--t3);margin-top:4px',
+          textContent: f.note || '',
+        })
+      );
       row.appendChild(info);
 
-      row.appendChild(el('span', { className: 'bdg ' + (bc[f.st] || 'bg2'), style: 'flex-shrink:0', textContent: lb[f.st] || f.st || '' }));
+      row.appendChild(
+        el('span', {
+          className: 'bdg ' + (bc[f.st] || 'bg2'),
+          style: 'flex-shrink:0',
+          textContent: lb[f.st] || f.st || '',
+        })
+      );
 
       const delBtn = el('button', {
         className: 'btn bs',
@@ -231,7 +288,8 @@ function rAllFC() {
       });
 
       delBtn.addEventListener('click', async () => {
-        const currentScript = (S.script.results[page] && S.script.results[page].script.content) || '';
+        const currentScript =
+          (S.script.results[page] && S.script.results[page].script.content) || '';
         const escaped = escapeRegExp(f.text || '');
         let matchFound = false;
         let matchCount = 0;
@@ -291,7 +349,9 @@ function rAllFC() {
           let content = newResults[page].script.content || '';
           const pattern = new RegExp(escaped + '[.!?]?\\s*', 'g');
           content = content.replace(pattern, '');
-          newResults[page].script = Object.assign({}, newResults[page].script, { content: content.trim() });
+          newResults[page].script = Object.assign({}, newResults[page].script, {
+            content: content.trim(),
+          });
 
           if (S.script.scrDual) {
             if (newResults[page].script.type === 'longform' && S.script.scrDual.longform) {
@@ -333,8 +393,12 @@ function rAllFC() {
     card.appendChild(el('div', { className: 'empty-msg', textContent: '검증 항목이 없습니다' }));
   }
 
-  const previewWrap = el('div', { style: 'margin-top:16px;border-top:1px solid var(--bdr);padding-top:16px' });
-  const previewHeader = el('div', { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px' });
+  const previewWrap = el('div', {
+    style: 'margin-top:16px;border-top:1px solid var(--bdr);padding-top:16px',
+  });
+  const previewHeader = el('div', {
+    style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px',
+  });
   previewHeader.appendChild(el('div', { className: 't-subtitle', textContent: '대본 미리보기' }));
 
   const originalContent = _originalScripts[page] || '';
@@ -362,24 +426,36 @@ function rAllFC() {
         const grid = el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:10px' });
 
         const origCol = el('div');
-        origCol.appendChild(el('div', { style: 'font-size:11px;font-weight:600;color:var(--red);margin-bottom:4px', textContent: '원본 (팩트체크 전)' }));
+        origCol.appendChild(
+          el('div', {
+            style: 'font-size:11px;font-weight:600;color:var(--red);margin-bottom:4px',
+            textContent: '원본 (팩트체크 전)',
+          })
+        );
         origCol.appendChild(
           el('div', {
             style:
               'font-size:12px;line-height:1.7;padding:10px;background:rgba(201,42,42,.04);border:1px solid rgba(201,42,42,.12);border-radius:var(--r);max-height:200px;overflow-y:auto;white-space:pre-wrap;color:var(--t2)',
-            textContent: originalContent.substring(0, 800) + (originalContent.length > 800 ? '...' : ''),
-          }),
+            textContent:
+              originalContent.substring(0, 800) + (originalContent.length > 800 ? '...' : ''),
+          })
         );
         grid.appendChild(origCol);
 
         const curCol = el('div');
-        curCol.appendChild(el('div', { style: 'font-size:11px;font-weight:600;color:var(--grn);margin-bottom:4px', textContent: '수정본 (현재)' }));
+        curCol.appendChild(
+          el('div', {
+            style: 'font-size:11px;font-weight:600;color:var(--grn);margin-bottom:4px',
+            textContent: '수정본 (현재)',
+          })
+        );
         curCol.appendChild(
           el('div', {
             style:
               'font-size:12px;line-height:1.7;padding:10px;background:rgba(13,146,84,.04);border:1px solid rgba(13,146,84,.12);border-radius:var(--r);max-height:200px;overflow-y:auto;white-space:pre-wrap;color:var(--t2)',
-            textContent: currentContent.substring(0, 800) + (currentContent.length > 800 ? '...' : ''),
-          }),
+            textContent:
+              currentContent.substring(0, 800) + (currentContent.length > 800 ? '...' : ''),
+          })
         );
         grid.appendChild(curCol);
 
@@ -402,9 +478,11 @@ function rAllFC() {
         container.appendChild(
           el('div', {
             className: 'out',
-            style: 'max-height:200px;overflow-y:auto;padding:12px;background:var(--bg);border-radius:var(--r);font-size:13px;line-height:1.8',
-            textContent: currentContent.substring(0, 800) + (currentContent.length > 800 ? '...' : ''),
-          }),
+            style:
+              'max-height:200px;overflow-y:auto;padding:12px;background:var(--bg);border-radius:var(--r);font-size:13px;line-height:1.8',
+            textContent:
+              currentContent.substring(0, 800) + (currentContent.length > 800 ? '...' : ''),
+          })
         );
       }
     });
@@ -418,9 +496,10 @@ function rAllFC() {
   compareContainer.appendChild(
     el('div', {
       className: 'out',
-      style: 'max-height:200px;overflow-y:auto;padding:12px;background:var(--bg);border-radius:var(--r);font-size:13px;line-height:1.8',
+      style:
+        'max-height:200px;overflow-y:auto;padding:12px;background:var(--bg);border-radius:var(--r);font-size:13px;line-height:1.8',
       textContent: currentContent.substring(0, 800) + (currentContent.length > 800 ? '...' : ''),
-    }),
+    })
   );
   previewWrap.appendChild(compareContainer);
 
@@ -429,7 +508,7 @@ function rAllFC() {
       el('div', {
         style: 'margin-top:6px;font-size:11px;color:var(--acc)',
         textContent: '⚠ 팩트체크 삭제로 원본 대비 대본이 수정되었습니다',
-      }),
+      })
     );
   }
 
@@ -448,7 +527,12 @@ function rAllFC() {
     navRow.appendChild(el('div'));
   }
 
-  navRow.appendChild(el('span', { className: 't-xs-t3', textContent: '팩트체크 ' + fcs.length + '건 · ' + (page + 1) + '/' + results.length }));
+  navRow.appendChild(
+    el('span', {
+      className: 't-xs-t3',
+      textContent: '팩트체크 ' + fcs.length + '건 · ' + (page + 1) + '/' + results.length,
+    })
+  );
 
   if (page < results.length - 1) {
     const nextBtn = el('button', { className: 'btn bp', textContent: '다음 스크립트 →' });
@@ -457,7 +541,11 @@ function rAllFC() {
     });
     navRow.appendChild(nextBtn);
   } else {
-    const saveBtn = el('button', { className: 'btn bs', style: 'font-size:12px', textContent: '💾 대본 저장' });
+    const saveBtn = el('button', {
+      className: 'btn bs',
+      style: 'font-size:12px',
+      textContent: '💾 대본 저장',
+    });
     saveBtn.addEventListener('click', () => {
       try {
         saveToHistory();
@@ -534,18 +622,30 @@ async function processAllFactCheck() {
             '대본 일부가 AI 서비스(' +
             (S.script.factCheckedBy === 'perplexity' ? 'Perplexity' : 'Claude/Gemini') +
             ')에 전송되어 검증됩니다. 회사 서버에는 저장되지 않습니다.',
-        }),
+        })
       );
       root.appendChild(txNotice);
 
       const loadDiv = el('div', { id: 'fcLoad' });
       root.appendChild(loadDiv);
 
-      const prog = createProgress('fcLoad', '팩트 검증 (' + (idx + 1) + '/' + total + ')', stepLabels, 20 * total);
+      const prog = createProgress(
+        'fcLoad',
+        '팩트 검증 (' + (idx + 1) + '/' + total + ')',
+        stepLabels,
+        20 * total
+      );
       for (let i = 0; i < idx; i++) prog.nextStep();
 
       try {
-        const fcs = await withTimeout((signal) => Api.factCheck(current.script.content, { signal: mergeAbortSignals(signal, _fcLeaveAC.signal) }), TIMEOUT.FACTCHECK, '팩트 검증 시간이 초과되었습니다.');
+        const fcs = await withTimeout(
+          (signal) =>
+            Api.factCheck(current.script.content, {
+              signal: mergeAbortSignals(signal, _fcLeaveAC.signal),
+            }),
+          TIMEOUT.FACTCHECK,
+          '팩트 검증 시간이 초과되었습니다.'
+        );
         if (runId !== _fcRunId) return;
 
         prog.nextStep();

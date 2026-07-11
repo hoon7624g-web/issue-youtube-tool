@@ -21,7 +21,7 @@ export const shared = {
 // ═══════════════════════════════════════
 // 자막 프리페치 + 캐시 (Step 4 → Step 5 병렬화)
 // ═══════════════════════════════════════
-const _subCache = {};  // videoId → { text, language, ... }
+const _subCache = {}; // videoId → { text, language, ... }
 let _subPrefetchPromise = null;
 let _subPrefetchVideoId = null;
 
@@ -35,16 +35,19 @@ export function prefetchSubtitle(videoId) {
   _subPrefetchVideoId = videoId;
 
   if (window.electronAPI && window.electronAPI.isElectron && window.electronAPI.getSubtitle) {
-    _subPrefetchPromise = window.electronAPI.getSubtitle(videoId).then(sub => {
-      const text = sub.text || '';
-      if (text && text.length > 30) {
-        _subCache[videoId] = sub;
-      }
-      return sub;
-    }).catch(e => {
-      console.warn('[SubPrefetch] 실패:', e.message);
-      return { text: '', error: e.message };
-    });
+    _subPrefetchPromise = window.electronAPI
+      .getSubtitle(videoId)
+      .then((sub) => {
+        const text = sub.text || '';
+        if (text && text.length > 30) {
+          _subCache[videoId] = sub;
+        }
+        return sub;
+      })
+      .catch((e) => {
+        console.warn('[SubPrefetch] 실패:', e.message);
+        return { text: '', error: e.message };
+      });
   }
 }
 

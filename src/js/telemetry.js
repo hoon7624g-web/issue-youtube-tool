@@ -19,7 +19,7 @@ export function trackEvent(event, data) {
   _queue.push({
     e: event,
     d: data || {},
-    t: Date.now()
+    t: Date.now(),
   });
   if (_queue.length >= MAX_QUEUE) _flush();
   if (!_flushTimer) {
@@ -58,9 +58,9 @@ async function _flush() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
+        Authorization: 'Bearer ' + token,
       },
-      body: JSON.stringify({ events: batch })
+      body: JSON.stringify({ events: batch }),
     });
 
     _queue.splice(0, batch.length);
@@ -71,7 +71,10 @@ async function _flush() {
 
 // ── 앱 종료 시 잔여 이벤트 전송 ──
 export function flushTelemetry() {
-  if (_flushTimer) { clearInterval(_flushTimer); _flushTimer = null; }
+  if (_flushTimer) {
+    clearInterval(_flushTimer);
+    _flushTimer = null;
+  }
   if (isSessionOnlyMode()) {
     _queue.length = 0; // 공용 PC 모드: 서버 전송 없이 큐만 비움
     return;

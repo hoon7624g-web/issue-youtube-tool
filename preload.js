@@ -4,47 +4,71 @@ contextBridge.exposeInMainWorld('electronAPI', {
   isElectron: true,
   getSubtitle: (videoId) => ipcRenderer.invoke('get-subtitle', videoId),
   getIssueLink: () => ipcRenderer.invoke('get-issuelink'),
-  callClaude: (prompt, model, maxTokens, requestId) => ipcRenderer.invoke('call-claude', prompt, model, maxTokens, requestId),
-  callGemini: (prompt, model, maxTokens, requestId) => ipcRenderer.invoke('call-gemini', prompt, model, maxTokens, requestId),
-  callGeminiVideo: (videoId, prompt, model, maxTokens, requestId) => ipcRenderer.invoke('call-gemini-video', videoId, prompt, model, maxTokens, requestId),
-  callOpenAI: (prompt, maxTokens, requestId) => ipcRenderer.invoke('call-openai', prompt, maxTokens, requestId),
-  callPerplexity: (prompt, maxTokens, requestId) => ipcRenderer.invoke('call-perplexity', prompt, maxTokens, requestId),
+  callClaude: (prompt, model, maxTokens, requestId) =>
+    ipcRenderer.invoke('call-claude', prompt, model, maxTokens, requestId),
+  callGemini: (prompt, model, maxTokens, requestId) =>
+    ipcRenderer.invoke('call-gemini', prompt, model, maxTokens, requestId),
+  callGeminiVideo: (videoId, prompt, model, maxTokens, requestId) =>
+    ipcRenderer.invoke('call-gemini-video', videoId, prompt, model, maxTokens, requestId),
+  callOpenAI: (prompt, maxTokens, requestId) =>
+    ipcRenderer.invoke('call-openai', prompt, maxTokens, requestId),
+  callPerplexity: (prompt, maxTokens, requestId) =>
+    ipcRenderer.invoke('call-perplexity', prompt, maxTokens, requestId),
 
   // YouTube / Pexels IPC (렌더러 키 노출 방지)
   ytFetch: (endpoint, params) => ipcRenderer.invoke('yt-fetch', endpoint, params),
   pexelsSearch: (query) => ipcRenderer.invoke('pexels-search', query),
 
   // TTS / ElevenLabs IPC (렌더러에 키 노출 방지)
-  callTTS: (text, voiceName, gender, speed, requestId) => ipcRenderer.invoke('call-tts', text, voiceName, gender, speed, requestId),
-  callElevenLabsTTS: (text, voiceId, speed, requestId) => ipcRenderer.invoke('call-elevenlabs-tts', text, voiceId, speed, requestId),
+  callTTS: (text, voiceName, gender, speed, requestId) =>
+    ipcRenderer.invoke('call-tts', text, voiceName, gender, speed, requestId),
+  callElevenLabsTTS: (text, voiceId, speed, requestId) =>
+    ipcRenderer.invoke('call-elevenlabs-tts', text, voiceId, speed, requestId),
   uploadElevenLabsVoice: (payload) => ipcRenderer.invoke('upload-elevenlabs-voice', payload),
 
   // LLM 스트리밍 (4-1) — requestId 기반 이벤트 분리
-  callClaudeStream: (prompt, model, maxTokens, requestId) => ipcRenderer.invoke('call-claude-stream', prompt, model, maxTokens, requestId),
-  callGeminiStream: (prompt, model, maxTokens, requestId) => ipcRenderer.invoke('call-gemini-stream', prompt, model, maxTokens, requestId),
-  callGeminiVideoStream: (videoId, prompt, model, maxTokens, requestId) => ipcRenderer.invoke('call-gemini-video-stream', videoId, prompt, model, maxTokens, requestId),
+  callClaudeStream: (prompt, model, maxTokens, requestId) =>
+    ipcRenderer.invoke('call-claude-stream', prompt, model, maxTokens, requestId),
+  callGeminiStream: (prompt, model, maxTokens, requestId) =>
+    ipcRenderer.invoke('call-gemini-stream', prompt, model, maxTokens, requestId),
+  callGeminiVideoStream: (videoId, prompt, model, maxTokens, requestId) =>
+    ipcRenderer.invoke('call-gemini-video-stream', videoId, prompt, model, maxTokens, requestId),
   cancelLLMStream: (requestId) => ipcRenderer.invoke('cancel-llm-stream', requestId),
   cancelLLMRequest: (requestId) => ipcRenderer.invoke('cancel-llm-request', requestId),
   cancelTTSRequest: (requestId) => ipcRenderer.invoke('cancel-tts-request', requestId),
-  cancelElevenLabsRequest: (requestId) => ipcRenderer.invoke('cancel-elevenlabs-request', requestId),
+  cancelElevenLabsRequest: (requestId) =>
+    ipcRenderer.invoke('cancel-elevenlabs-request', requestId),
   // ★ v3.5.8→v3.6.0: onLLMStream 통합 API — done/error 시 3개 리스너 자동 해제
   onLLMStream: (requestId, { onChunk, onDone, onError } = {}) => {
     const cleanups = [];
     let settled = false;
     const autoClean = () => {
-      if (settled) return; settled = true;
-      cleanups.forEach(fn => fn());
+      if (settled) return;
+      settled = true;
+      cleanups.forEach((fn) => fn());
     };
 
-    const chunkHandler = (e, rid, chunk) => { if (rid === requestId && onChunk) onChunk(chunk); };
+    const chunkHandler = (e, rid, chunk) => {
+      if (rid === requestId && onChunk) onChunk(chunk);
+    };
     ipcRenderer.on('llm-stream-chunk', chunkHandler);
     cleanups.push(() => ipcRenderer.removeListener('llm-stream-chunk', chunkHandler));
 
-    const doneHandler = (e, rid, fullText) => { if (rid === requestId) { autoClean(); if (onDone) onDone(fullText); } };
+    const doneHandler = (e, rid, fullText) => {
+      if (rid === requestId) {
+        autoClean();
+        if (onDone) onDone(fullText);
+      }
+    };
     ipcRenderer.on('llm-stream-done', doneHandler);
     cleanups.push(() => ipcRenderer.removeListener('llm-stream-done', doneHandler));
 
-    const errorHandler = (e, rid, error) => { if (rid === requestId) { autoClean(); if (onError) onError(error); } };
+    const errorHandler = (e, rid, error) => {
+      if (rid === requestId) {
+        autoClean();
+        if (onError) onError(error);
+      }
+    };
     ipcRenderer.on('llm-stream-error', errorHandler);
     cleanups.push(() => ipcRenderer.removeListener('llm-stream-error', errorHandler));
 
