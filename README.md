@@ -12,7 +12,7 @@
 
 실제 앱이 동작하는 전체 흐름을 데모 영상으로 담았습니다.
 
-[![데모 영상](https://img.youtube.com/vi/4hVRpJiMrlw/hqdefault.jpg)](https://www.youtube.com/watch?v=4hVRpJiMrlw)
+[![유튜브도사 실제 화면 — AI 음성 생성 단계](assets/voice-generation.png)](https://www.youtube.com/watch?v=4hVRpJiMrlw)
 
 ▶ [실제 작동 데모 영상 보기](https://www.youtube.com/watch?v=4hVRpJiMrlw)
 
@@ -55,7 +55,7 @@
 
 ## 실제 화면
 
-이 저장소에는 별도의 정적 스크린샷을 포함하지 않았습니다. 앱을 실제로 구동하려면 운영 백엔드와 외부 API 키가 필요해, 이 환경에서 새 스크린샷을 캡처하지 못했습니다. 실제 화면과 흐름은 위 [데모 영상](https://www.youtube.com/watch?v=4hVRpJiMrlw)에서 확인할 수 있습니다.
+위 이미지는 실제 앱의 'AI 음성 생성' 단계 화면입니다. 왼쪽에 전체 작업 단계가, 오른쪽에 기본·프리미엄(ElevenLabs) 음성 선택과 커스텀 보이스 설정이 보입니다. 나머지 단계를 포함한 전체 동작 흐름은 위 [데모 영상](https://www.youtube.com/watch?v=4hVRpJiMrlw)에서 확인할 수 있습니다.
 
 ## 아키텍처
 
