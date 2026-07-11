@@ -7,11 +7,21 @@ dist/
 *.dmg
 *.AppImage
 
-# 환경변수 / 시크릿
+# 환경변수 / 시크릿 (.env.example 템플릿은 추적 유지)
 .env
+.env.*
+!.env.example
 
 # Supabase 로컬 임시 파일
 supabase/.temp/
+
+# 로그 / 커버리지
+*.log
+coverage/
+
+# 에디터
+.vscode/
+.idea/
 
 # OS
 .DS_Store
