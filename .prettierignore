@@ -1,0 +1,17 @@
+# 빌드/의존성 산출물
+node_modules/
+dist/
+out/
+remotion/node_modules/
+
+# 락파일·바이너리·자동생성
+package-lock.json
+remotion/package-lock.json
+**/*.min.js
+**/*.map
+assets/
+build/
+supabase/schema/
+
+# 정적 참조 문서
+THIRD_PARTY_NOTICES.md
