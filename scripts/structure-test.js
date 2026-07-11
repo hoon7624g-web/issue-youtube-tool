@@ -4,7 +4,7 @@
 // 회귀하지 않았는지만 검사한다. 실제 브라우저나 Electron 앱을 띄우지 않는다.
 //
 // 실행: node scripts/structure-test.js
-// TODO: 진짜 런타임 E2E(Playwright + Electron)는 미구현 — docs/TODO.md 참조
+// TODO: 진짜 런타임 E2E(Playwright + Electron)는 아직 미구현
 // ═══════════════════════════════════════
 const { execSync } = require('child_process');
 const fs = require('fs');

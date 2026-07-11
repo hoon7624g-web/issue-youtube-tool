@@ -23,7 +23,7 @@ function assertFalsy(name, val) {
 
 // ── 순수 유틸 함수: 실제 구현(pure-utils.mjs)을 직접 require해서 검증 ──
 // (이전엔 테스트 파일에 복제본을 두어 실코드와 무관하게 통과하던 구조였음 → 실모듈 검증으로 전환)
-// esc()는 DOM(textContent→innerHTML) 의존이라 Node에서 실행 불가 → docs/TODO.md의 런타임 테스트 항목 참조
+// esc()는 DOM(textContent→innerHTML) 의존이라 Node에서 실행 불가 (런타임 DOM 테스트는 미구현)
 const { cleanAI, extractJSON, safeUrl, isNews, isBreaking, scoreVids } = require('../src/js/pure-utils.mjs');
 
 // ── cleanAI() ──

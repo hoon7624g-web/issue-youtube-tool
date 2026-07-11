@@ -152,7 +152,7 @@ export function setSession(s) {
   if (window.electronAPI && window.electronAPI.setSession) {
     // ★ v3.6.2 P2-2: Electron에서는 fail-closed (localStorage fallback 제거)
     // safeStorage 불가 시 세션은 메모리에만 보관되고 앱 재시작 시 재로그인 필요.
-    // 이 정책은 SECURITY_MODEL.md의 v3.6.0 fail-closed 원칙과 일치한다.
+    // 이 정책은 fail-closed 원칙(safeStorage 불가 시 저장 차단)과 일치한다.
     window.electronAPI.setSession(s).then(ok => {
       if (!ok) {
         console.warn('[Session] safeStorage 저장 실패 — 메모리 전용 모드 (앱 종료 시 재로그인 필요)');
