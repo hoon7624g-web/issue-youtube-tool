@@ -32,6 +32,10 @@
     "productName": "유튜브도사 영상 제작 솔루션",
     "artifactName": "youtube-dosa-${version}-${os}-${arch}.${ext}",
     "asar": true,
+    "asarUnpack": [
+      "node_modules/ffmpeg-static/**",
+      "remotion/**"
+    ],
     "files": [
       "main.js",
       "main/**/*",
