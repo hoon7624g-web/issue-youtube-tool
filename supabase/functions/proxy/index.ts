@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════
-// 이슈 유튜브 제작툴 — Supabase Edge Function (API Proxy v3.6.0)
+// 이슈 유튜브 제작툴 — Supabase Edge Function (API Proxy v3.6.2)
 // Supabase Auth + profiles.approval_status 기반 인증
 // ═══════════════════════════════════════════════════════════
 // 배포: supabase functions deploy proxy --no-verify-jwt
@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
   const path = url.pathname.replace(/^\/proxy/, "");
   const svc = getServiceClient();
 
-  if (path === "/" || path === "/health" || path === "") return json(cors, { status: "ok", version: "3.6.0" });
+  if (path === "/" || path === "/health" || path === "") return json(cors, { status: "ok", version: "3.6.2" });
 
   // ════════════════════════════════════════════════════════════
   // ⚠️ 공개 엔드포인트 (인증 불필요) — 여기 위에만 추가 가능
