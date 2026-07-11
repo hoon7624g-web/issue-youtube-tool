@@ -1,0 +1,8 @@
+{
+  "framework": null,
+  "buildCommand": "",
+  "outputDirectory": ".",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/admin-web/$1" }
+  ]
+}
