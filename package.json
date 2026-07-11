@@ -46,7 +46,7 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "shyun-create",
+        "owner": "hoon7624g-web",
         "repo": "issue-youtube-tool",
         "releaseType": "release"
       }

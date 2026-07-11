@@ -8,7 +8,6 @@ export { createClient };
 // ── CORS: 허용된 Origin만 ──
 const ALLOWED_ORIGINS = [
   "https://issue-youtube-tool.vercel.app",
-  "https://issue-youtube-tool-shyun-creates-projects.vercel.app",  // 어드민 (Vercel 프로젝트 URL)
   "null",  // Electron file:// — 3-6: 장기적으로 제거 목표. 현재는 X-App-Client 헤더로 추가 검증.
   "http://localhost:5173",  // Vite dev server (개발 모드)
   "https://youtube-dosa-web-v3-6-0.vercel.app",  // 웹 테스트 버전

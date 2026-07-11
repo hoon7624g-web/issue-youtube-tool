@@ -211,7 +211,7 @@ npm run build:mac    # macOS
 
 ## 주요 URL / 설정값
 
-- **GitHub:** `shyun-create/issue-youtube-tool`
+- **GitHub:** `hoon7624g-web/issue-youtube-tool`
 - **빌드 배포:** GitHub Releases (electron-builder)
 - **Edge Function:** `supabase functions deploy proxy --no-verify-jwt`
 - **GAS Deployment:** `https://script.google.com/macros/s/AKfycbwtmASwkreCs6etm1JVOjBasK-6pVzyNhIctzL764xJ42oVUKT3WYDbGMuMYKIfxxM/exec`
