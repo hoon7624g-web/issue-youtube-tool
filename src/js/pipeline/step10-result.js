@@ -2,7 +2,7 @@
 // pipeline/step10-result.js — 멀티 결과 + ZIP 다운로드
 // v3.6.0 — XSS 방어: innerHTML/onclick 전면 제거, DOM 기반 전환
 // ═══════════════════════════════════════
-import { $, fmt, fmtB, toast, safeUrl, el, LABEL_COLORS, confirmModal } from '../utils.js';
+import { $, fmt, fmtB, toast, safeUrl, el, confirmModal } from '../utils.js';
 import { S } from '../state.js';
 import { saveToHistory } from './history.js';
 import JSZip from 'jszip';
@@ -10,11 +10,9 @@ import { registerStep, runStep, registerAction, runAction } from '../router.js';
 import { shared } from '../shared.js';
 import { trackFeature } from '../telemetry.js';
 import { generateCapcutDraft } from './capcut-draft.js';
-import { ResultHero, DownloadButton, StaggerChildren } from '../components.js';
 
 /* ── URL 허용 호스트 ── */
 const PEXELS_HOSTS = ['pexels.com'];
-const STORYBLOCKS_HOSTS = ['storyblocks.com'];
 
 function isValidResult(r) {
   return !!(
@@ -131,11 +129,9 @@ registerStep(10, () => {
   let totalChars = 0;
   const totalScripts = results.length;
   let totalEkw = 0;
-  let totalFcs = 0;
   results.forEach((r) => {
     totalChars += (r.script.content || '').length;
     totalEkw += (r.ekw || []).length;
-    totalFcs += (r.fcs || []).length;
   });
 
   // ── 헤더 ──
@@ -644,7 +640,7 @@ registerAction('downloadPkg', async () => {
 
     // 파일 목록 미리보기
     const fileList = [];
-    const analysisPayload = buildAnalysisArchivePayload();
+    buildAnalysisArchivePayload();
     results.forEach((r) => {
       if (!r?.script) return;
       const prefix =

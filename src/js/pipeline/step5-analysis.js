@@ -24,7 +24,7 @@ let _analysisRunId = 0;
 let _analysisLeaveAC = new AbortController();
 import { getApiKeys } from '../../client-proxy.js';
 import { registerStep, runStep } from '../router.js';
-import { Card, CopyButton, AccentList, DeviceNotice } from '../components.js';
+import { Card, CopyButton, AccentList } from '../components.js';
 import { getCachedSubtitle, prefetchSubtitle } from '../shared.js';
 
 sOn(K.NAV_STEP, (step) => {
@@ -590,7 +590,6 @@ registerStep(5, () => {
     }, 1000);
 
     let firstChunk = true;
-    let charCount = 0;
 
     // ── 분석 호출 (스트리밍 — 응답 시작되면 상태 업데이트) ──
     withTimeout(
@@ -612,7 +611,6 @@ registerStep(5, () => {
                 }
               }
             }
-            charCount = fullSoFar.length;
           },
           { signal }
         ),

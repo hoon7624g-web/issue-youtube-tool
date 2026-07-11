@@ -221,13 +221,9 @@ async function fastExtract(videoId) {
   }
 
   // 도메인 검증
-  try {
-    const u = new URL(timedTextUrl);
-    if (!u.hostname.endsWith('youtube.com') && !u.hostname.endsWith('google.com')) {
-      throw new Error('untrusted caption host: ' + u.hostname);
-    }
-  } catch (e) {
-    throw e;
+  const u = new URL(timedTextUrl);
+  if (!u.hostname.endsWith('youtube.com') && !u.hostname.endsWith('google.com')) {
+    throw new Error('untrusted caption host: ' + u.hostname);
   }
 
   const timedText = await httpsGet(timedTextUrl, 10000);
@@ -343,7 +339,7 @@ function slowExtract(videoId, hardenChildWindow) {
                 if (json3Url.indexOf('fmt=') === -1) json3Url += '&fmt=json3';
                 var r = await fetch(json3Url, {credentials: 'include'});
                 var finalJsonUrl = new URL(r.url || json3Url);
-                if (!(/(^|\.)youtube\.com$/.test(finalJsonUrl.hostname) || /(^|\.)google\.com$/.test(finalJsonUrl.hostname)) || finalJsonUrl.pathname.indexOf('/api/timedtext') === -1) {
+                if (!(/(^|[.])youtube[.]com$/.test(finalJsonUrl.hostname) || /(^|[.])google[.]com$/.test(finalJsonUrl.hostname)) || finalJsonUrl.pathname.indexOf('/api/timedtext') === -1) {
                   throw new Error('untrusted final caption url');
                 }
                 var body = await r.text();
@@ -358,7 +354,7 @@ function slowExtract(videoId, hardenChildWindow) {
                 }
                 var r2 = await fetch(url, {credentials: 'include'});
                 var finalXmlUrl = new URL(r2.url || url);
-                if (!(/(^|\.)youtube\.com$/.test(finalXmlUrl.hostname) || /(^|\.)google\.com$/.test(finalXmlUrl.hostname)) || finalXmlUrl.pathname.indexOf('/api/timedtext') === -1) {
+                if (!(/(^|[.])youtube[.]com$/.test(finalXmlUrl.hostname) || /(^|[.])google[.]com$/.test(finalXmlUrl.hostname)) || finalXmlUrl.pathname.indexOf('/api/timedtext') === -1) {
                   throw new Error('untrusted final caption url');
                 }
                 var body2 = await r2.text();

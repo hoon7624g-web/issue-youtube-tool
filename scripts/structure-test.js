@@ -6,11 +6,7 @@
 // 실행: node scripts/structure-test.js
 // TODO: 진짜 런타임 E2E(Playwright + Electron)는 아직 미구현
 // ═══════════════════════════════════════
-const { execSync } = require('child_process');
 const fs = require('fs');
-const path = require('path');
-
-const TIMEOUT = 15000;
 let passed = 0;
 let failed = 0;
 
@@ -64,26 +60,6 @@ stepFiles.forEach((f) => {
 // 4. registerStep 호출 확인
 const stepsToCheck = [2, 3, 5, 6, 7, 8, 9, 10];
 stepsToCheck.forEach((n) => {
-  const file =
-    n === 3
-      ? 'step3-4-videos.js'
-      : 'step' +
-        n +
-        '-' +
-        [
-          '',
-          '',
-          'keywords',
-          'videos',
-          '',
-          'analysis',
-          'script',
-          'factcheck',
-          'footage',
-          'voice',
-          'result',
-        ][n] +
-        '.js';
   const filePath =
     'src/js/pipeline/' +
     (n === 3
@@ -196,7 +172,6 @@ assert(compJs.includes('DeviceNotice'), 'components.js: DeviceNotice (P2-17)');
 console.log('\n── 런타임 모의 검증 ──');
 
 // cleanAI keepEmoji 테스트
-const { execFileSync } = require('child_process');
 try {
   // 소스 수준 분기 검증 (실행 기반 동작 검증은 unit 테스트에서 수행)
   const cleanAISrc = pureUtilsJs.substring(

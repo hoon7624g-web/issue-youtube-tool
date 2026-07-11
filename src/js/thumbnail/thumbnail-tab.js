@@ -2,7 +2,7 @@
 // src/js/thumbnail/thumbnail-tab.js — 썸네일 생성기
 // ★ v4.3: AI 문구 생성 + 롱폼 썸네일 프리뷰/저장
 // ═══════════════════════════════════════════════════════════
-import { $, el, toast } from '../utils.js';
+import { el, toast } from '../utils.js';
 import { S } from '../state.js';
 import { runAction } from '../router.js';
 
@@ -355,7 +355,7 @@ async function generateAiTitles(section, btn) {
       .split('\n')
       .map((l) =>
         l
-          .replace(/^\d+[\.\)]\s*/, '')
+          .replace(/^\d+[.)]\s*/, '')
           .replace(/^[-•]\s*/, '')
           .trim()
       )

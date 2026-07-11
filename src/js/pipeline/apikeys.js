@@ -4,17 +4,12 @@
 // ═══════════════════════════════════════
 import { $, toast, confirmModal, el } from '../utils.js';
 import { S, sSet } from '../state.js';
-import { getApiKeys, hasApiKeys } from '../../client-proxy.js';
-import { registerStep, registerAction, runStep, runAction } from '../router.js';
+import { getApiKeys } from '../../client-proxy.js';
+import { registerAction, runStep, runAction } from '../router.js';
 import { syncSb } from '../ui.js';
 
 // ── 분리된 모듈 import ──
-import {
-  saveApiKeys,
-  buildApiKeyFormDOM,
-  bindFormEvents,
-  isSessionOnlyMode,
-} from './apikeys-form.js';
+import { saveApiKeys, buildApiKeyFormDOM, bindFormEvents } from './apikeys-form.js';
 import { validateAllKeys } from './apikeys-validation.js';
 
 // ═══════════════════════════════════════

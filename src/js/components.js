@@ -2,7 +2,7 @@
 // components.js — 재사용 DOM 빌더 컴포넌트
 // pipeline 모듈에서 공통 UI 패턴을 추출
 // ═══════════════════════════════════════
-import { el, esc } from './utils.js';
+import { el } from './utils.js';
 
 // ── 카드 컴포넌트 ──
 // barColor: 'blue' | 'green' | 'red' | 'acc' → 상단 3px 컬러바 추가

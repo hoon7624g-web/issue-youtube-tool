@@ -843,7 +843,7 @@ async function _batchTranslate(keywords) {
       const en = line
         .substring(0, sep)
         .trim()
-        .replace(/^\d+[\.\)]\s*/, '');
+        .replace(/^\d+[.)]\s*/, '');
       const ko = line.substring(sep + 1).trim();
       if (en && ko) map[en.toLowerCase()] = ko;
     }

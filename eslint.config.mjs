@@ -59,18 +59,21 @@ export default [
   // 스타일성 잡음은 warn으로 낮춰 빌드를 막지 않되 가시화한다.
   {
     rules: {
+      // 미사용 변수는 error. catch 바인딩 미사용은 방어적 코드라 허용(caughtErrors:none),
+      // 인자 미사용과 _ 접두 변수도 허용.
       'no-unused-vars': [
-        'warn',
-        { args: 'none', varsIgnorePattern: '^_', ignoreRestSiblings: true },
+        'error',
+        {
+          args: 'none',
+          caughtErrors: 'none',
+          varsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
       ],
       'no-empty': ['warn', { allowEmptyCatch: true }],
-      'preserve-caught-error': 'warn',
-      // 스타일/오탐 성격 규칙은 warn (빌드 차단 X). 진짜 버그성 규칙은 error 유지.
-      // no-redeclare는 FFmpeg/Remotion의 양성 `var i` 루프 카운터만 걸려 warn으로 둔다.
-      'no-redeclare': 'warn',
-      'no-useless-escape': 'warn',
-      'no-useless-catch': 'warn',
-      'no-useless-assignment': 'warn',
+      // 오피니언/오탐 성격 규칙은 off (버그가 아님).
+      'preserve-caught-error': 'off',
+      'no-useless-assignment': 'off',
     },
   },
 ];

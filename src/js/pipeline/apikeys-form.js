@@ -6,7 +6,7 @@
 //   P0-3: 필드별 키 보기/숨기기 (눈 아이콘 + 5초 자동 숨김)
 //   P0-4: safeStorage 불가 시 모달 경고 + 세션 전용 모드
 // ═══════════════════════════════════════
-import { $, esc, toast, confirmModal, el, TIMING, promptModal } from '../utils.js';
+import { $, toast, confirmModal, el, TIMING, promptModal } from '../utils.js';
 import { getApiKeys, setApiKeys, reloadApiKeys, isKeySaved } from '../../client-proxy.js';
 import { runStep } from '../router.js';
 import { validateSingleKey } from './apikeys-validation.js';

@@ -2,7 +2,7 @@
 // pipeline/step2-keywords.js — 키워드 선택 (ES Module)
 // v3.6.0 — XSS 방어: inline onclick/onkeydown 제거
 // ═══════════════════════════════════════
-import { $, esc, toast, el } from '../utils.js';
+import { $, toast, el } from '../utils.js';
 import { S, sSet, sNext } from '../state.js';
 import { K } from '../constants.js';
 import { Api } from '../api.js';

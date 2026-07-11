@@ -8,7 +8,6 @@ import { M } from './mock-data.js';
 import { PROMPT } from './prompts.js';
 import { cacheGet, cacheSet } from './cache.js';
 import {
-  cfg,
   hasKey,
   getApiKeys,
   authLogin,

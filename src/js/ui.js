@@ -3,7 +3,6 @@
 // ═══════════════════════════════════════
 import {
   $,
-  esc,
   fmt,
   toast,
   safeUrl,
@@ -21,9 +20,7 @@ import { DeviceNotice } from './components.js';
 import {
   getApiKeys,
   clearSession,
-  authLogin,
   authSignup,
-  hasApiKeys,
   clearRefreshInterval,
   resolveProvider,
 } from '../client-proxy.js';

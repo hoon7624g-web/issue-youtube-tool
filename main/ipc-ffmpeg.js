@@ -208,7 +208,7 @@ function splitSub(text, max) {
   // 2단계: max 글자 단위로 분할
   var raw = [];
   var buf = '';
-  for (var i = 0; i < cleaned.length; i++) {
+  for (let i = 0; i < cleaned.length; i++) {
     buf += cleaned[i];
     var atBreak = /[\s,，.。!！?？~]/.test(cleaned[i]);
     var atMax = buf.length >= max;
@@ -282,7 +282,7 @@ async function assembleVideo(params, mainWindow) {
     // ── 1. 풋티지 다운로드 ──
     onProgress('download', 0, '풋티지 다운로드 중...');
     var ftFiles = [];
-    for (var i = 0; i < footageList.length; i++) {
+    for (let i = 0; i < footageList.length; i++) {
       var ft = footageList[i];
       if (!ft || !ft.url || !isSafePexelsUrl(ft.url)) continue;
       var dest = path.join(tempDir, 'ft_' + i + '.mp4');
@@ -320,11 +320,11 @@ async function assembleVideo(params, mainWindow) {
 
     // ── 3. 장면별 시간 = 글자수 비례 × 음성 길이 ──
     var totalChars = 0;
-    for (var i = 0; i < scenes.length; i++) totalChars += (scenes[i].text || '').length;
+    for (let i = 0; i < scenes.length; i++) totalChars += (scenes[i].text || '').length;
     if (totalChars === 0) totalChars = 1;
 
     var timings = [];
-    for (var i = 0; i < scenes.length; i++) {
+    for (let i = 0; i < scenes.length; i++) {
       var text = scenes[i].text || '';
       var ms = Math.round((text.length / totalChars) * voiceMs);
       timings.push({ text: text, ms: Math.max(ms, 500) });
@@ -344,7 +344,7 @@ async function assembleVideo(params, mainWindow) {
     var srtIdx = 0,
       cursor = 0;
     var srtBlocks = [];
-    for (var i = 0; i < timings.length; i++) {
+    for (let i = 0; i < timings.length; i++) {
       var t = timings[i];
       if (!t.text) {
         cursor += t.ms;
@@ -388,7 +388,7 @@ async function assembleVideo(params, mainWindow) {
     // ── 5. 풋티지 트림 (stream_loop + 장면 시간 맞춤) ──
     onProgress('trim', 0, '풋티지 편집 중...');
     var trimmedList = [];
-    for (var i = 0; i < timings.length; i++) {
+    for (let i = 0; i < timings.length; i++) {
       var ftSrc = ftFiles[i % ftFiles.length];
       var durSec = (timings[i].ms / 1000).toFixed(3);
       var out = path.join(tempDir, 'tr_' + i + '.mp4');

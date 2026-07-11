@@ -292,6 +292,7 @@ export function patchApi(ApiObj) {
     const since = d.toISOString();
     const mergedQ = kwLabels.join('|');
 
+    // eslint-disable-next-line no-useless-catch -- mock fallback 제거 후 의도적으로 남긴 rethrow 지점(하단 catch 주석 참조)
     try {
       // ★ 개선: maxResults 50 (API 쿼터 동일) + 숏폼은 서버 필터 적용
       // YouTube videoDuration: 'short' (<4분), 'medium' (4~20분), 'long' (>20분)

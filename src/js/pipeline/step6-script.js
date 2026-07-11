@@ -4,7 +4,6 @@
 // ═══════════════════════════════════════
 import {
   $,
-  esc,
   toast,
   withTimeout,
   friendlyError,

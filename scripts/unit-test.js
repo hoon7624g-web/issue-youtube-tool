@@ -297,7 +297,7 @@ assertTruthy('login-icon 사용', uiJs.includes("'login-icon'"));
 console.log('\n[Factcheck: Compare View + Safety]');
 
 function fcEscapeRegExp(text) {
-  return String(text || '').replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+  return String(text || '').replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
 function createFactcheckHarness(initialResults) {

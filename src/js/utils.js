@@ -133,7 +133,7 @@ document.addEventListener('click', (e) => {
 
 export function withTimeout(taskOrPromise, ms, msg) {
   _aiCancel.cancelled = false;
-  const token = ++_aiCancel.token;
+  ++_aiCancel.token;
   const controller = new AbortController();
   _aiCancel.controller = controller;
 

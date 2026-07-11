@@ -83,7 +83,7 @@ function getRemotionEntryPoint() {
     path.join(resPath, 'app', 'remotion', 'src', 'index.js'),
     path.join(__dirname, '..', 'remotion', 'src', 'index.js'),
   ];
-  for (var i = 0; i < candidates.length; i++) {
+  for (let i = 0; i < candidates.length; i++) {
     if (fs.existsSync(candidates[i])) return candidates[i];
   }
   return candidates[0];
@@ -211,14 +211,14 @@ function splitSub(text, max) {
     }
     var chunk = cleaned.substring(pos, pos + max);
     var bestBreak = -1;
-    for (var i = chunk.length - 1; i >= 3; i--) {
+    for (let i = chunk.length - 1; i >= 3; i--) {
       if (/[.!?~。]/.test(chunk[i])) {
         bestBreak = i + 1;
         break;
       }
     }
     if (bestBreak === -1) {
-      for (var i = chunk.length - 1; i >= 3; i--) {
+      for (let i = chunk.length - 1; i >= 3; i--) {
         if (/[,，]/.test(chunk[i])) {
           bestBreak = i + 1;
           break;
@@ -226,7 +226,7 @@ function splitSub(text, max) {
       }
     }
     if (bestBreak === -1) {
-      for (var i = chunk.length - 1; i >= 3; i--) {
+      for (let i = chunk.length - 1; i >= 3; i--) {
         if (chunk[i] === ' ') {
           bestBreak = i + 1;
           break;
@@ -234,7 +234,7 @@ function splitSub(text, max) {
       }
     }
     if (bestBreak === -1) {
-      for (var i = chunk.length - 1; i >= 3; i--) {
+      for (let i = chunk.length - 1; i >= 3; i--) {
         var code = chunk.charCodeAt(i);
         if (code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 === 0) {
           bestBreak = i + 1;
@@ -326,7 +326,7 @@ async function renderWithRemotion(params, mainWindow) {
   try {
     onProgress('download', 0, '풋티지 다운로드 중...');
     var localFootageNames = [];
-    for (var i = 0; i < footageList.length; i++) {
+    for (let i = 0; i < footageList.length; i++) {
       var ft = footageList[i];
       if (!ft || !ft.url || !isSafePexelsUrl(ft.url)) {
         localFootageNames.push(null);
@@ -361,7 +361,7 @@ async function renderWithRemotion(params, mainWindow) {
     if (!voiceMs) voiceMs = scenes.length * 3000;
 
     var totalChars = 0;
-    for (var i = 0; i < scenes.length; i++) totalChars += (scenes[i].text || '').length;
+    for (let i = 0; i < scenes.length; i++) totalChars += (scenes[i].text || '').length;
     if (totalChars === 0) totalChars = 1;
     var enrichedScenes = scenes.map(function (sc, idx) {
       return {
@@ -373,7 +373,7 @@ async function renderWithRemotion(params, mainWindow) {
     });
     var subtitles = [],
       cursor = 0;
-    for (var i = 0; i < enrichedScenes.length; i++) {
+    for (let i = 0; i < enrichedScenes.length; i++) {
       var sc = enrichedScenes[i];
       if (!sc.text) {
         cursor += sc.durationMs;
@@ -461,8 +461,6 @@ async function renderThumbnail(params, mainWindow) {
   var accentColor = params.accentColor || '#FF6B35';
   var channelName = params.channelName || '';
   var style = params.style || 'bold';
-  var onProgress = params.onProgress || function () {};
-
   await ensureRemotion();
   var tempDir = createTempDir(),
     bundlePath = null;
@@ -562,7 +560,7 @@ async function renderThumbnailBatch(params, mainWindow) {
     onProgress('bundle', 0, '번들링 중...');
     bundlePath = await _bundle({ entryPoint: getRemotionEntryPoint(), publicDir: tempDir });
 
-    for (var i = 0; i < variants.length; i++) {
+    for (let i = 0; i < variants.length; i++) {
       var v = variants[i];
       var compositionId = v.compositionId || 'LongformThumbnail';
       var inputProps = {
@@ -651,8 +649,6 @@ async function renderThumbnailHQ(params, mainWindow) {
   var ctaText = params.ctaText || '';
   var showTopBar = params.showTopBar !== false;
   var showBottomBar = params.showBottomBar !== false;
-  var onProgress = params.onProgress || function () {};
-
   await ensureRemotion();
   var tempDir = createTempDir(),
     bundlePath = null;

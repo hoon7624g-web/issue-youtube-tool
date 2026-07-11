@@ -47,7 +47,7 @@ sOn(K.NAV_STEP, (step) => {
 const MAX_UNDO = 10;
 
 function escapeRegExp(text) {
-  return String(text || '').replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+  return String(text || '').replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
 function isValidResult(r) {
